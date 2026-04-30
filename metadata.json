@@ -1,0 +1,7 @@
+{
+  "name": "NgolabHub - Member & Affiliate Hub",
+  "description": "A comprehensive RBAC-based platform for members and affiliates with AI-powered reward tracking, gamification links, and commission management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
