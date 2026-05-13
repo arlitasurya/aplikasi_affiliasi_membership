@@ -3,7 +3,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, RefreshCw, CheckCircle, AlertCircle, Sparkles, ArrowLeft, Upload, FileText } from 'lucide-react';
 import { User } from '../types';
-import { WEB_APP_URL } from '../constants';
+import { API_BASE_URL } from '../constants';
+import { scanKTM } from '../services/geminiService';
 
 interface UpgradeAffiliateProps {
   user: User;
@@ -19,6 +20,8 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
   const [error, setError] = useState<string | null>(null);
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const normalizeNim = (value?: string | null): string => String(value || '').replace(/\D/g, '');
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
@@ -46,42 +49,73 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
   const handleUpgrade = async (imageData: string) => {
     if (!imageData) return;
 
+    const registeredNim = normalizeNim(user.nim);
+    if (!registeredNim) {
+      setError('NIM akun Anda belum terdaftar. Mohon lengkapi NIM saat registrasi/di profil sebelum upgrade afiliasi.');
+      return;
+    }
+
     setIsVerifying(true);
-    setVerificationStatus('Memverifikasi KTM Telkom University...');
+    setVerificationStatus('Memverifikasi KTM dan mencocokkan NIM...');
     setError(null);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const verificationResult = await scanKTM(imageData);
+      const detectedNim = normalizeNim(verificationResult.nim);
 
-      const verificationResult = {
-        isTelkom: true,
-        confidence: 0.99,
-        reasoning: 'KTM Berhasil Divalidasi',
-        nim: ''
-      };
+      if (!verificationResult.isTelkom) {
+        throw new Error(verificationResult.reasoning || 'KTM tidak terdeteksi sebagai KTM Telkom University.');
+      }
 
-      setVerificationStatus(verificationResult.reasoning);
+      if (!detectedNim) {
+        throw new Error('NIM pada foto KTM tidak terbaca. Pastikan foto jelas dan tidak blur.');
+      }
 
-      const response = await fetch(WEB_APP_URL, {
+      if (detectedNim !== registeredNim) {
+        throw new Error(`NIM pada KTM (${detectedNim}) tidak sama dengan NIM akun Anda (${registeredNim}).`);
+      }
+
+      setVerificationStatus(`KTM terverifikasi. NIM cocok (${detectedNim}).`);
+
+      // Call backend pusat REST API: POST /api/membership/affiliate/verify
+      const response = await fetch(`${API_BASE_URL}/api/membership/affiliate/verify`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          action: "upgradeToAffiliate",
+          user_id: user.id,
           email: user.email,
-          ktm_url: imageData,
+          ktm_picture: imageData, // Backend expects ktm_picture
           ai_is_telkom: verificationResult.isTelkom,
           ai_confidence: verificationResult.confidence,
-          ai_reasoning: verificationResult.reasoning,
-          nim: verificationResult.nim
-        }),
+          ai_reasoning: verificationResult.reasoning || 'KTM dan NIM terverifikasi.',
+          detected_nim: detectedNim
+        })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server responded with status: ${response.status}`);
+      }
 
       const result = await response.json();
 
+      // Backend returns: { success: true, data: { user: {...} } } or { success: true, data: { /* affiliate data */ } }
       if (result.success) {
+        const src = result.data?.user || result.data || {};
         await new Promise(resolve => setTimeout(resolve, 300));
-        onSuccess(result.data);
+        const updatedUser: User = {
+          ...src,
+          id: src.user_id || src.id,
+          totalPoints: src.total_points || 0,
+          cashbackPoints: src.cashback_points || 0,
+          commissionPoints: src.commission_points || 0,
+          referralCode: result.data?.affiliate_network?.referral_code || src.referral_code || ''
+        } as any;
+        onSuccess(updatedUser);
       } else {
-        setError(result.error || "Gagal verifikasi KTM. Pastikan foto jelas.");
+        setError(result.message || "Gagal verifikasi KTM. Pastikan foto jelas.");
         setVerificationStatus(null);
       }
     } catch (err) {

@@ -1,20 +1,13 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Tesseract from 'tesseract.js';
 import { Transaction, User, UserRole } from "../types";
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
 /**
- * Ngolab AI Service - Production
+ * Ngolab OCR Service
  */
 
-/**
- * Helper to compress and resize base64 image before sending to AI
- */
 const compressImage = async (base64: string, maxWidth = 1024): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
-    img.src = base64;
     img.onload = () => {
       const canvas = document.createElement('canvas');
       let width = img.width;
@@ -29,68 +22,65 @@ const compressImage = async (base64: string, maxWidth = 1024): Promise<string> =
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compress quality to 70%
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
     };
+
     img.src = base64;
   });
 };
 
+const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, ' ').trim();
+
+const extractNimFromText = (text: string): string | null => {
+  const candidates = text.match(/\b\d{8,15}\b/g) || [];
+  if (candidates.length > 0) {
+    return candidates[0];
+  }
+
+  const nimLine = text
+    .split(/\r?\n/)
+    .find((line) => /nim|nrp|student id|id mahasiswa/i.test(line));
+
+  if (!nimLine) return null;
+
+  const lineDigits = nimLine.match(/\b\d{8,15}\b/);
+  return lineDigits?.[0] || null;
+};
+
 /**
- * Scan KTM using Gemini Vision
+ * Scan KTM using OCR and extract Telkom/NIM clues from text.
  */
 export const scanKTM = async (base64Image: string) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
-    // Compress image first to avoid payload limits
     const optimizedImage = await compressImage(base64Image);
-    const base64Data = optimizedImage.split(',')[1] || optimizedImage;
-    const mimeType = optimizedImage.match(/data:(.*?);/)?.[1] || "image/jpeg";
-    
-    const prompt = `
-      Identity Verification Task:
-      Analyze the provided image (which is a Student ID Card / KTM or a portion of it).
-      Determine if it belongs to Telkom University, Indonesia.
-      
-      Detection Clues:
-      1. Distinctive "Telkom University" logo or text.
-      2. Mentions of "Fakultas Ilmu Terapan", "D3 Sistem Informasi", or other Telkom faculties.
-      3. Red and white color theme.
-      
-      Respond STRICTLY in a SINGLE JSON object. 
-      {
-        "isTelkom": boolean,
-        "confidence": number (0.0 to 1.0),
-        "reasoning": "Explain why briefly in Indonesian",
-        "nim": "Student ID number if visible",
-        "name": "Student name if visible"
-      }
-    `;
+    const result = await Tesseract.recognize(optimizedImage, 'eng', {
+      logger: () => undefined
+    });
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: mimeType
-        }
-      }
-    ]);
+    const rawText = result.data.text || '';
+    const normalized = normalizeText(rawText);
+    const detectedNim = extractNimFromText(rawText);
+    const isTelkom = /telkom university|telkom|fakultas ilmu terapan|s1 informatika|d3 sistem informasi/i.test(normalized);
 
-    const responseText = result.response.text();
-    // More robust JSON cleaning
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("Format respon AI tidak valid.");
-    
-    return JSON.parse(jsonMatch[0]);
+    return {
+      isTelkom,
+      confidence: isTelkom ? 0.85 : 0.2,
+      reasoning: isTelkom
+        ? 'Teks KTM mengandung indikator Telkom University atau identitas kampus yang sesuai.'
+        : 'Teks KTM belum cukup kuat menunjukkan bahwa kartu adalah KTM Telkom University.',
+      nim: detectedNim,
+      name: null,
+      text: rawText
+    };
   } catch (error) {
     console.error("AI Scan failed:", error);
     return {
       isTelkom: false,
       confidence: 0,
-      reasoning: "Terjadi gangguan koneksi ke AI atau gambar terlalu besar. Silakan coba lagi dengan foto yang lebih dekat.",
+      reasoning: "OCR gagal membaca KTM. Silakan coba lagi dengan foto yang lebih jelas dan dekat.",
       nim: null,
-      name: null
+      name: null,
+      text: ''
     };
   }
 };
@@ -116,15 +106,7 @@ export const getGeminiPrediction = async (user: User, _transactions: Transaction
  * Verifikasi KTM Mockup (STUB).
  */
 export const verifyKTMWithGemini = async (_base64Image: string) => {
-  // Simulate verification delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  // Return fixed valid mock data for testing
-  return { 
-    isKTM: true, 
-    nim: "1301201234", 
-    prodi: "S1 Informatika" 
-  };
+  return scanKTM(_base64Image);
 };
 
 /**

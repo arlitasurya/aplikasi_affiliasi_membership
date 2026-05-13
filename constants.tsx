@@ -2,10 +2,12 @@
 import { MenuItem, Voucher } from './types';
 
 /**
- * PASTE URL WEB APP ANDA DI SINI
- * Dapatkan URL ini setelah melakukan "Deploy" > "New Deployment" di Google Apps Script.
+ * Backend Pusat API Configuration
+ * Use environment variable `REACT_APP_API_BASE_URL` to point to backend pusat
+ * Terhubung ke tabel users di database pusat
+ * Backend Pusat: http://10.216.154.9:4000
  */
-export const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz0kbj-Mv4kFu2J2CFtVEwSPlYIFc7NS64v4ZLMdLm9z6yC5C6Ng0vYPteNf4OIP11a/exec';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://10.216.154.9:4000';
 
 export const MOCK_MENU: MenuItem[] = [
   {

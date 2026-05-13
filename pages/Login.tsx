@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { UserRole, User, MemberLevel } from '../types';
 import { ArrowLeft, Star, Mail, Lock } from 'lucide-react';
-import { WEB_APP_URL } from '../constants';
+import { API_BASE_URL } from '../constants';
 
 interface LoginProps {
   onBack: () => void;
@@ -21,23 +21,48 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
     setError(null);
 
     try {
-      const response = await fetch(WEB_APP_URL, {
+      // Send both email and username for backend compatibility.
+      // Some backend handlers read `email`, others read `username`.
+      const body = {
+        email: email,
+        username: email,
+        password: password
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/membership/login`, {
         method: 'POST',
-        body: JSON.stringify({ 
-          action: 'login', 
-          email: email,
-          password: password 
-        }),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server responded with status: ${response.status}`);
+      }
+
       const result = await response.json();
 
-      if (result.success && result.data) {
-        onSuccess(result.data);
+      // Backend returns: { success: true, data: { user: {...}, affiliate_network, points } }
+      if (result.success && result.data && result.data.user) {
+        const src = result.data.user;
+        const user: User = {
+          ...src,
+          id: src.user_id || src.id,
+          role: src.role || UserRole.MEMBER,
+          totalPoints: result.data.points?.total_points || src.total_points || 0,
+          cashbackPoints: result.data.points?.cashback_points || src.cashback_points || 0,
+          commissionPoints: result.data.points?.commission_points || src.commission_points || 0,
+          referralCode: result.data.affiliate_network?.referral_code || src.referral_code || ''
+        };
+        onSuccess(user);
       } else {
-        setError(result.error || "Email tidak terdaftar atau password salah.");
+        setError(result.message || "Email tidak terdaftar atau password salah.");
       }
     } catch (err) {
-      setError("Gagal terhubung ke server. Pastikan Web App sudah di-deploy sebagai 'Anyone'.");
+      console.error("Login failed:", err);
+      setError(err instanceof Error ? err.message : "Gagal terhubung ke server. Pastikan backend pusat berjalan.");
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { WEB_APP_URL } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 import { 
   Settings, 
   Save, 
@@ -20,16 +20,13 @@ const AdminGlobalSettings: React.FC = () => {
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'getGlobalSettings' }),
-      });
+      const response = await fetch(`${API_BASE_URL}/api/membership/admin/settings`, { method: 'GET' });
       const result = await response.json();
       if (result.success) {
         setSettings(result.data || {});
       }
     } catch (error) {
-      console.error("Failed to fetch settings:", error);
+      console.error('Failed to fetch settings:', error);
     } finally {
       setIsLoading(false);
     }
@@ -42,16 +39,17 @@ const AdminGlobalSettings: React.FC = () => {
   const handleUpdateSetting = async (key: string, value: string) => {
     setIsSaving(true);
     try {
-      const response = await fetch(WEB_APP_URL, {
+      const response = await fetch(`${API_BASE_URL}/api/membership/admin/settings`, {
         method: 'POST',
-        body: JSON.stringify({ action: 'updateGlobalSetting', key, value }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
       });
       const result = await response.json();
       if (result.success) {
         setSettings(prev => ({ ...prev, [key]: value }));
       }
     } catch (error) {
-      alert("Gagal memperbarui pengaturan.");
+      alert('Gagal memperbarui pengaturan.');
     } finally {
       setIsSaving(false);
     }

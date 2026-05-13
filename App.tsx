@@ -14,7 +14,7 @@ import Profile from './pages/Profile';
 import UpgradeAffiliate from './pages/UpgradeAffiliate';
 import { VoucherCard } from './pages/RewardsCommon';
 import { TransactionList } from './pages/HistoryCommon';
-import { MOCK_VOUCHERS, WEB_APP_URL, GAMIFICATION_LINK } from './constants';
+import { MOCK_VOUCHERS, API_BASE_URL, GAMIFICATION_LINK } from './constants';
 import { Clock, LogOut, Settings, Users, Star, Zap, ArrowRight, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -46,21 +46,23 @@ const App: React.FC = () => {
 
   useEffect(() => {
     let interval: any;
-    if (user && user.role !== UserRole.ADMIN) {
+      if (user && user.role !== UserRole.ADMIN) {
       interval = setInterval(async () => {
         try {
-          const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'getDashboard', userId: user.id, email: user.email }),
+          const response = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
+            method: 'GET'
           });
           const result = await response.json();
           if (result.success && result.data) {
-            if (JSON.stringify(result.data) !== JSON.stringify(user)) {
-              setUser(result.data);
+            const latest = result.data.user || result.data;
+            if (JSON.stringify(latest) !== JSON.stringify(user)) {
+              // normalize id field
+              const normalized = { ...latest, id: latest.user_id || latest.id };
+              setUser(normalized as any);
             }
           }
         } catch (e) {
-          console.error("Sync failed:", e);
+          console.error('Sync failed:', e);
         }
       }, 8000);
     }
@@ -138,19 +140,18 @@ const App: React.FC = () => {
   const handleUpdateUser = async (updatedUser: User) => {
     setIsLoadingUpdate(true);
     try {
-      const response = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ 
-          action: 'updateProfile', 
-          userData: updatedUser 
-        }),
+      const response = await fetch(`${API_BASE_URL}/api/membership/profile/${updatedUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: updatedUser }),
       });
       const result = await response.json();
       if (result.success) {
-        setUser(result.data);
-        alert("Profil berhasil diperbarui!");
+        const latest = result.data.user || result.data;
+        setUser({ ...latest, id: latest.user_id || latest.id } as any);
+        alert('Profil berhasil diperbarui!');
       } else {
-        alert("Gagal update: " + result.error);
+        alert('Gagal update: ' + (result.error || 'unknown'));
       }
     } catch (e) {
       alert("Koneksi gagal.");
@@ -174,23 +175,24 @@ const App: React.FC = () => {
 
       setIsLoadingUpdate(true);
       try {
-        const response = await fetch(WEB_APP_URL, {
+        const response = await fetch(`${API_BASE_URL}/api/membership/redeem-points`, {
           method: 'POST',
-          body: JSON.stringify({ 
-            action: 'redeemPoints', 
-            userId: user.id,
-            email: user.email,
-            points: voucher.pointCost,
-            voucherId: voucher.id
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, voucher_code: voucher.code, points_to_redeem: voucher.pointCost }),
         });
         const result = await response.json();
         if (result.success) {
-          setUser(result.data);
+          // optionally refresh profile
+          const ref = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`);
+          const refRes = await ref.json().catch(() => ({}));
+          if (refRes.success && refRes.data) {
+            const latest = refRes.data.user || refRes.data;
+            setUser({ ...latest, id: latest.user_id || latest.id } as any);
+          }
           setVouchers(prev => prev.map(v => v.id === id ? { ...v, isClaimed: true } : v));
           alert(`Berhasil menukarkan ${voucher.pointCost} poin untuk ${voucher.title}`);
         } else {
-          alert("Gagal tukar poin: " + result.error);
+          alert('Gagal tukar poin: ' + (result.message || result.error || 'unknown'));
         }
       } catch (e) {
         alert("Koneksi gagal.");

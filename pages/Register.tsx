@@ -2,7 +2,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { UserRole, User, MemberLevel } from '../types';
 import { ArrowLeft, Upload, CheckCircle, FileText, Camera, RefreshCw, Sparkles } from 'lucide-react';
-import { WEB_APP_URL } from '../constants';
+import { API_BASE_URL } from '../constants';
 import Webcam from 'react-webcam';
 
 interface RegisterProps {
@@ -14,6 +14,7 @@ interface RegisterProps {
 const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
+    nim: '',
     email: '',
     password: '',
     referralCode: sessionStorage.getItem('referralCodeFromURL') || '',
@@ -53,8 +54,14 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Solo requerimos KTM jika role adalah MEMBER_AFFILIATE
+
+    // Validate basic fields
+    if (!formData.name || !formData.email || !formData.password) {
+      setError("Semua field wajib diisi.");
+      return;
+    }
+
+    // KTM is required only for MEMBER_AFFILIATE during old flow (now handled by affiliate/verify)
     if (role === UserRole.MEMBER_AFFILIATE && !ktmFile) {
       setError("Silakan unggah atau ambil foto KTM terlebih dahulu untuk mendaftar sebagai Afiliasi.");
       return;
@@ -64,45 +71,58 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
     setError(null);
 
     try {
-      const aiScanner = (role === UserRole.MEMBER_AFFILIATE && ktmFile)
-        ? { isTelkom: true, confidence: 0.99, reasoning: "KTM Berhasil Divalidasi" }
-        : { isTelkom: false, confidence: 0, reasoning: "Pendaftaran Member Biasa" };
-      
+      // Send multiple key aliases to stay compatible with different backend contracts.
       const body = {
-        action: "registerUser",
-        id: "U-" + Date.now(),
+        username: formData.name,
         name: formData.name,
+        full_name: formData.name,
+        nim: formData.nim,
+        NIM: formData.nim,
+        student_id: formData.nim,
         email: formData.email,
         password: formData.password,
-        phone: '', 
-        photoURL: '', 
-        ktm_url: ktmFile || '', 
-        ai_is_telkom: aiScanner.isTelkom,
-        ai_confidence: aiScanner.confidence,
-        ai_reasoning: aiScanner.reasoning,
-        referredBy: formData.referralCode,
-        role: role // Sertakan role yang dipilih
+        // referral_code handling: if provided, include it
+        ...(formData.referralCode && { referral_code: formData.referralCode })
       };
 
-      const response = await fetch(WEB_APP_URL, {
+      const response = await fetch(`${API_BASE_URL}/api/membership/register`, {
         method: 'POST',
-        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
       });
 
       if (!response.ok) {
-        throw new Error(`Server merespon dengan status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Server responded with status: ${response.status}`);
       }
 
       const result = await response.json();
 
-      if (result.success) {
-        onSuccess(result.data);
+      // Backend returns: { success: true, data: { /* user fields */ } }
+      if (result.success && result.data) {
+        const payload = result.data;
+        // Some responses place user fields directly under data, some under data.user
+        const src = payload.user || payload;
+        const user: User = {
+          ...src,
+          id: src.user_id || src.id,
+          name: src.name || src.username || src.full_name || formData.name,
+          nim: src.nim || src.NIM || src.student_id || formData.nim,
+          role: src.role || UserRole.MEMBER,
+          totalPoints: src.total_points || 0,
+          cashbackPoints: src.cashback_points || 0,
+          commissionPoints: src.commission_points || 0,
+          referralCode: payload.referral_code || src.referral_code || ''
+        };
+        onSuccess(user);
       } else {
-        setError(result.error || "Gagal mendaftar. Silakan coba lagi.");
+        setError(result.message || "Gagal mendaftar. Silakan coba lagi.");
       }
     } catch (err) {
       console.error("Registration failed:", err);
-      setError("Gagal terhubung ke database. Pastikan koneksi internet stabil.");
+      setError(err instanceof Error ? err.message : "Gagal terhubung ke server. Pastikan backend pusat berjalan.");
     } finally {
       setIsLoading(false);
     }
@@ -137,6 +157,18 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Nama Lengkap</label>
               <input required className={inputClasses} placeholder="Budi Santoso" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">NIM</label>
+              <input
+                required
+                inputMode="numeric"
+                className={inputClasses}
+                placeholder="1301201234"
+                value={formData.nim}
+                onChange={e => setFormData({...formData, nim: e.target.value.replace(/[^0-9]/g, '')})}
+              />
             </div>
 
             <div className="space-y-2">

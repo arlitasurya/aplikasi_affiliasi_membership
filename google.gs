@@ -14,7 +14,7 @@ function getSheet(name) {
 
   // Initialize Headers if needed
   const headers = {
-    'Master_Users': ['ID', 'Nama', 'Email', 'Role', 'Status', 'KTM_URL', 'AI_Is_Telkom', 'AI_Confidence', 'AI_Reasoning', 'Referred_By', 'Join_Date', 'Points', 'Password', 'Nomor_Telepon', 'Foto_Profil'],
+    'Master_Users': ['ID', 'Nama', 'Email', 'Role', 'Status', 'KTM_URL', 'AI_Is_Telkom', 'AI_Confidence', 'AI_Reasoning', 'Referred_By', 'Join_Date', 'Points', 'Password', 'Nomor_Telepon', 'Foto_Profil', 'NIM'],
     'Affiliate_Network': ['UserID', 'Referral_Code', 'Level_Afiliasi', 'Total_Downline'],
     'Commission_Logs': ['LogID', 'Tanggal', 'Penerima_ID', 'Penyumbang_ID', 'Poin_Didapat'],
     'Redemption_Logs': ['LogID', 'UserID', 'Poin_Digunakan', 'VoucherID_Referensi', 'Status'],
@@ -45,7 +45,7 @@ function doGet(e) {
  */
 function initializeDatabase() {
   const headers = {
-    'Master_Users': ['ID', 'Nama', 'Email', 'Role', 'Status', 'KTM_URL', 'AI_Is_Telkom', 'AI_Confidence', 'AI_Reasoning', 'Referred_By', 'Join_Date', 'Points', 'Password', 'Nomor_Telepon', 'Foto_Profil'],
+    'Master_Users': ['ID', 'Nama', 'Email', 'Role', 'Status', 'KTM_URL', 'AI_Is_Telkom', 'AI_Confidence', 'AI_Reasoning', 'Referred_By', 'Join_Date', 'Points', 'Password', 'Nomor_Telepon', 'Foto_Profil', 'NIM'],
     'Affiliate_Network': ['UserID', 'Referral_Code', 'Level_Afiliasi', 'Total_Downline'],
     'Commission_Logs': ['LogID', 'Tanggal', 'Penerima_ID', 'Penyumbang_ID', 'Poin_Didapat'],
     'Redemption_Logs': ['LogID', 'UserID', 'Poin_Digunakan', 'VoucherID_Referensi', 'Status'],
@@ -246,6 +246,7 @@ function findUserProfile(userIdOrEmail, fallbackEmail) {
         joinDate: String(data[i][10]),
         phone: String(data[i][13]),
         photoURL: String(data[i][14]),
+        nim: String(data[i][15] || ''),
         level: 'SILVER' // Logic for level can be derived from points later
       });
     }
@@ -274,7 +275,7 @@ function registerUser(userData) {
     role = "MEMBER_AFFILIATE";
   }
 
-  // Header Baru: ID, Nama, Email, Role, Status, KTM_URL, AI_Is_Telkom, AI_Confidence, AI_Reasoning, Referred_By, Join_Date, Points, Password, Nomor_Telepon, Foto_Profil
+  // Header Baru: ID, Nama, Email, Role, Status, KTM_URL, AI_Is_Telkom, AI_Confidence, AI_Reasoning, Referred_By, Join_Date, Points, Password, Nomor_Telepon, Foto_Profil, NIM
   sheet.appendRow([
     userID, 
     userData.name, 
@@ -290,7 +291,8 @@ function registerUser(userData) {
     0, // Points
     userData.password || '',
     userData.phone || '', 
-    userData.photoURL || ''
+    userData.photoURL || '',
+    userData.nim || ''
   ]);
 
   // Gamification Stats
@@ -431,6 +433,10 @@ function calculateReferralCommissionPoints(affiliateLevel) {
     : (!isNaN(globalFallbackRate) && globalFallbackRate >= 0 ? globalFallbackRate : defaultRate);
 
   return Math.max(0, Math.round(basePoints * commissionRate / 100));
+}
+
+function normalizeNim(value) {
+  return String(value || '').replace(/\D/g, '');
 }
 
 function loginUser(email, password) {
@@ -657,6 +663,26 @@ function upgradeToAffiliate(userData) {
   if (!user) throw new Error("User tidak ditemukan.");
   if (user.role === 'MEMBER_AFFILIATE') throw new Error("User sudah menjadi Afiliasi.");
 
+  const registeredNim = normalizeNim(user.nim);
+  const submittedNim = normalizeNim(userData.nim);
+  const detectedNim = normalizeNim(userData.detected_nim);
+
+  if (!registeredNim) {
+    throw new Error("NIM akun belum tersedia. Silakan lengkapi NIM terlebih dahulu sebelum upgrade.");
+  }
+
+  if (submittedNim && submittedNim !== registeredNim) {
+    throw new Error("NIM yang dikirim tidak sesuai dengan NIM akun.");
+  }
+
+  if (!detectedNim) {
+    throw new Error("NIM pada KTM tidak terdeteksi. Pastikan foto KTM jelas.");
+  }
+
+  if (detectedNim !== registeredNim) {
+    throw new Error("NIM pada KTM tidak sama dengan NIM akun terdaftar.");
+  }
+
   const sheet = getSheet('Master_Users');
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
@@ -667,7 +693,7 @@ function upgradeToAffiliate(userData) {
       sheet.getRange(i + 1, 6).setValue(userData.ktm_url || '');
       sheet.getRange(i + 1, 7).setValue(userData.ai_is_telkom || false);
       sheet.getRange(i + 1, 8).setValue(userData.ai_confidence || 0);
-      sheet.getRange(i + 1, 9).setValue(userData.ai_reasoning || '');
+      sheet.getRange(i + 1, 9).setValue(userData.ai_reasoning || 'KTM dan NIM cocok.');
       break;
     }
   }
@@ -774,7 +800,8 @@ function getAllMembers() {
       email: String(data[i][2]),
       role: String(data[i][3]), // Role is index 3
       status: String(data[i][4]), // Status is index 4
-      joinDate: String(data[i][10])
+      joinDate: String(data[i][10]),
+      nim: String(data[i][15] || '')
     });
   }
   return results;

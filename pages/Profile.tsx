@@ -18,7 +18,7 @@ import {
   Copy,
   CheckCircle
 } from 'lucide-react';
-import { WEB_APP_URL } from '../constants';
+import { API_BASE_URL } from '../constants';
 
 interface ProfileProps {
   user: User;
@@ -95,22 +95,18 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
 
     setIsUpdatingPassword(true);
     try {
-      const response = await fetch(WEB_APP_URL, {
+      const response = await fetch(`${API_BASE_URL}/api/membership/change-password`, {
         method: 'POST',
-        body: JSON.stringify({
-          action: 'changePassword',
-          userId: user.id,
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword })
       });
       const result = await response.json();
       if (result.success) {
-        alert("Kata sandi berhasil diperbarui!");
+        alert('Kata sandi berhasil diperbarui!');
         setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
         setView('MAIN');
       } else {
-        alert("Gagal: " + result.error);
+        alert('Gagal: ' + (result.error || 'unknown'));
       }
     } catch (error) {
       alert("Terjadi kesalahan koneksi.");

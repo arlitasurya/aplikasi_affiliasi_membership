@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../../types';
 import Card from '../../components/Card';
-import { WEB_APP_URL } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 import { 
   Users, 
   CheckCircle, 
@@ -26,16 +26,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser }) => {
   const fetchAffiliates = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'getAllAffiliates' }),
-      });
+      const response = await fetch(`${API_BASE_URL}/api/membership/admin/affiliates`, { method: 'GET' });
       const result = await response.json();
-      if (result.success) {
-        setAffiliates(result.data);
+      // Terima berbagai format response dari API pusat tabel users
+      let data = [];
+      if (Array.isArray(result)) {
+        data = result;
+      } else if (result?.success && result?.data) {
+        data = Array.isArray(result.data) ? result.data : [];
+      } else if (result?.data) {
+        data = Array.isArray(result.data) ? result.data : [];
+      } else if (result?.affiliates) {
+        data = Array.isArray(result.affiliates) ? result.affiliates : [];
+      } else if (result?.users) {
+        data = Array.isArray(result.users) ? result.users : [];
       }
+      setAffiliates(data);
     } catch (error) {
-      console.error("Failed to fetch:", error);
+      console.error('Failed to fetch affiliates from central API:', error);
     } finally {
       setIsLoading(false);
     }
@@ -49,21 +57,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ adminUser }) => {
     if (!confirm(`Apakah Anda yakin ingin mengubah status menjadi ${newStatus}?`)) return;
 
     try {
-      const response = await fetch(WEB_APP_URL, {
+      const response = await fetch(`${API_BASE_URL}/api/membership/admin/affiliates/${userId}/status`, {
         method: 'POST',
-        body: JSON.stringify({ 
-          action: 'updateAccountStatus', 
-          userId, 
-          newStatus 
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newStatus })
       });
       const result = await response.json();
       if (result.success) {
-        alert("Status berhasil diperbarui!");
+        alert('Status berhasil diperbarui!');
         fetchAffiliates();
       }
     } catch (error) {
-      alert("Gagal memperbarui status.");
+      alert('Gagal memperbarui status.');
     }
   };
 

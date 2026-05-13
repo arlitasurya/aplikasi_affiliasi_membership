@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../../types';
-import { WEB_APP_URL } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 import { 
   Users, 
   Search, 
@@ -22,16 +22,24 @@ const AdminMemberManage: React.FC = () => {
   const fetchMembers = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'getAllMembers' }), // Note: I need to add this to google.gs
-      });
+      const response = await fetch(`${API_BASE_URL}/api/membership/admin/members`, { method: 'GET' });
       const result = await response.json();
-      if (result.success) {
-        setMembers(result.data);
+      // Terima berbagai format response dari API pusat tabel users
+      let data = [];
+      if (Array.isArray(result)) {
+        data = result;
+      } else if (result?.success && result?.data) {
+        data = Array.isArray(result.data) ? result.data : [];
+      } else if (result?.data) {
+        data = Array.isArray(result.data) ? result.data : [];
+      } else if (result?.users) {
+        data = Array.isArray(result.users) ? result.users : [];
+      } else if (result?.members) {
+        data = Array.isArray(result.members) ? result.members : [];
       }
+      setMembers(data);
     } catch (error) {
-      console.error("Failed to fetch members:", error);
+      console.error('Failed to fetch members from central API:', error);
     } finally {
       setIsLoading(false);
     }
