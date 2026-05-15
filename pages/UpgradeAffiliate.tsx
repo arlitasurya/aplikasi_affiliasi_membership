@@ -3,8 +3,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, RefreshCw, CheckCircle, AlertCircle, Sparkles, ArrowLeft, Upload, FileText } from 'lucide-react';
 import { User } from '../types';
-import { API_BASE_URL } from '../constants';
-import { scanKTM } from '../services/geminiService';
+import { verifyAffiliateKtm } from '../services/apiService';
 
 interface UpgradeAffiliateProps {
   user: User;
@@ -15,6 +14,7 @@ interface UpgradeAffiliateProps {
 const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuccess }) => {
   const [step, setStep] = useState<'INTRO' | 'SCANNING' | 'PREVIEW'>('INTRO');
   const [ktmImage, setKtmImage] = useState<string | null>(null);
+  const [ktmFile, setKtmFile] = useState<File | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,10 +23,17 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
 
   const normalizeNim = (value?: string | null): string => String(value || '').replace(/\D/g, '');
 
+  const dataUrlToFile = async (dataUrl: string, fileName: string): Promise<File> => {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+  };
+
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
     if (imageSrc) {
       setKtmImage(imageSrc);
+      void dataUrlToFile(imageSrc, `ktm-${user.id || 'upload'}.jpg`).then(setKtmFile).catch(() => setKtmFile(null));
       setStep('PREVIEW');
       void handleUpgrade(imageSrc);
     }
@@ -39,6 +46,7 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
       reader.onloadend = () => {
         const imageData = reader.result as string;
         setKtmImage(imageData);
+        setKtmFile(file);
         setStep('PREVIEW');
         void handleUpgrade(imageData);
       };
@@ -56,55 +64,16 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
     }
 
     setIsVerifying(true);
-    setVerificationStatus('Memverifikasi KTM dan mencocokkan NIM...');
+    setVerificationStatus('Mengunggah KTM dan menunggu verifikasi server...');
     setError(null);
 
     try {
-      const verificationResult = await scanKTM(imageData);
-      const detectedNim = normalizeNim(verificationResult.nim);
+      const fileToUpload = ktmFile || await dataUrlToFile(imageData, `ktm-${user.id || 'upload'}.jpg`);
+      const result = await verifyAffiliateKtm(user.id, fileToUpload);
 
-      if (!verificationResult.isTelkom) {
-        throw new Error(verificationResult.reasoning || 'KTM tidak terdeteksi sebagai KTM Telkom University.');
-      }
-
-      if (!detectedNim) {
-        throw new Error('NIM pada foto KTM tidak terbaca. Pastikan foto jelas dan tidak blur.');
-      }
-
-      if (detectedNim !== registeredNim) {
-        throw new Error(`NIM pada KTM (${detectedNim}) tidak sama dengan NIM akun Anda (${registeredNim}).`);
-      }
-
-      setVerificationStatus(`KTM terverifikasi. NIM cocok (${detectedNim}).`);
-
-      // Call backend pusat REST API: POST /api/membership/affiliate/verify
-      const response = await fetch(`${API_BASE_URL}/api/membership/affiliate/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          email: user.email,
-          ktm_picture: imageData, // Backend expects ktm_picture
-          ai_is_telkom: verificationResult.isTelkom,
-          ai_confidence: verificationResult.confidence,
-          ai_reasoning: verificationResult.reasoning || 'KTM dan NIM terverifikasi.',
-          detected_nim: detectedNim
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server responded with status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      // Backend returns: { success: true, data: { user: {...} } } or { success: true, data: { /* affiliate data */ } }
+      // Expected backend behavior: server performs OCR and updates user role/status automatically.
       if (result.success) {
         const src = result.data?.user || result.data || {};
-        await new Promise(resolve => setTimeout(resolve, 300));
         const updatedUser: User = {
           ...src,
           id: src.user_id || src.id,
@@ -115,7 +84,7 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
         } as any;
         onSuccess(updatedUser);
       } else {
-        setError(result.message || "Gagal verifikasi KTM. Pastikan foto jelas.");
+        setError(result.message || "Verifikasi gagal. Silakan kirim ulang foto atau hubungi dukungan.");
         setVerificationStatus(null);
       }
     } catch (err) {
@@ -270,6 +239,7 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
                   onClick={() => {
                     setVerificationStatus(null);
                     setError(null);
+                    setKtmFile(null);
                     setStep('SCANNING');
                   }}
                   className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
