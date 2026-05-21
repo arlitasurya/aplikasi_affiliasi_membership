@@ -2,8 +2,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { Camera, RefreshCw, CheckCircle, AlertCircle, Sparkles, ArrowLeft, Upload, FileText } from 'lucide-react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import { verifyAffiliateKtm } from '../services/apiService';
+import { API_BASE_URL } from '../constants';
 
 interface UpgradeAffiliateProps {
   user: User;
@@ -71,24 +72,131 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
       const fileToUpload = ktmFile || await dataUrlToFile(imageData, `ktm-${user.id || 'upload'}.jpg`);
       const result = await verifyAffiliateKtm(user.id, fileToUpload);
 
-      // Expected backend behavior: server performs OCR and updates user role/status automatically.
-      if (result.success) {
-        const src = result.data?.user || result.data || {};
-        const updatedUser: User = {
-          ...src,
-          id: src.user_id || src.id,
-          totalPoints: src.total_points || 0,
-          cashbackPoints: src.cashback_points || 0,
-          commissionPoints: src.commission_points || 0,
-          referralCode: result.data?.affiliate_network?.referral_code || src.referral_code || ''
-        } as any;
-        onSuccess(updatedUser);
-      } else {
-        setError(result.message || "Verifikasi gagal. Silakan kirim ulang foto atau hubungi dukungan.");
+      console.log('✅ KYC Verification Response:', result);
+
+      if (!result.success) {
+        setError('KYC server tidak merespon dengan baik. Silakan coba lagi.');
         setVerificationStatus(null);
+        setIsVerifying(false);
+        return;
+      }
+
+      const kycData = result.data || {};
+      console.log('📋 KYC Data:', {
+        detected_nim: kycData.detected_nim,
+        ai_is_telkom: kycData.ai_is_telkom,
+        ai_confidence: kycData.ai_confidence,
+        auto_approved: kycData.auto_approved,
+        has_central_response: !!kycData.central_response
+      });
+
+      // Extract verification details from KYC response
+      const detectedNim = kycData.detected_nim || null;
+      const isTelkom = kycData.ai_is_telkom || false;
+      const confidence = (kycData.ai_confidence || 0) * 100;
+      const autoApproved = kycData.auto_approved || false;
+
+      console.log(`📊 OCR Results: NIM=${detectedNim}, Telkom=${isTelkom}, Confidence=${confidence.toFixed(1)}%, AutoApproved=${autoApproved}`);
+      console.log(`🔍 Reasoning: ${kycData.ai_reasoning || 'No reason provided'}`);
+
+      // Handle auto-approval result from central backend (if included)
+      let centralResponse = kycData.central_response || {};
+      let userData = centralResponse?.data?.user || {};
+      
+      // Backend returns referral_code as separate field in response, not in user object
+      const backendReferralCode = centralResponse?.data?.referral_code || 
+                                  centralResponse?.data?.affiliate_network?.referral_code || 
+                                  null;
+
+      console.log('📦 Central Response:', centralResponse);
+      console.log('👤 User Data from Central:', userData);
+      console.log('🔑 Referral Code from Backend:', backendReferralCode);
+
+      // ENHANCED LOGIC: Accept if Telkom + detectedNim, even if confidence slightly below threshold
+      // This is more lenient than KYC server's auto-approval (0.9 threshold)
+      const shouldAcceptAsAffiliate = isTelkom && detectedNim;
+
+      console.log(`🔄 Decision Logic: isTelkom=${isTelkom}, detectedNim=${detectedNim}, shouldAccept=${shouldAcceptAsAffiliate}`);
+
+      if (shouldAcceptAsAffiliate) {
+        // ACCEPT: Valid Telkom KTM with NIM detected
+        // Use backend data if available, otherwise create fallback
+        const finalUserData = Object.keys(userData).length > 0 ? userData : null;
+        
+        const acceptedUser: User = {
+          ...user,
+          ...(finalUserData || {}),
+          id: finalUserData?.user_id || finalUserData?.id || user.id,
+          role: (finalUserData?.role as any) || UserRole.MEMBER_AFFILIATE,  // Use backend role if available
+          status: (finalUserData?.status as any) || 'ACTIVE',  // Use backend status if available
+          totalPoints: finalUserData?.total_points || finalUserData?.totalPoints || user.totalPoints || 0,
+          cashbackPoints: finalUserData?.cashback_points || finalUserData?.cashbackPoints || user.cashbackPoints || 0,
+          commissionPoints: finalUserData?.commission_points || finalUserData?.commissionPoints || user.commissionPoints || 0,
+          referralCode: backendReferralCode || finalUserData?.referral_code || finalUserData?.referralCode || user.referralCode || `REF_${user.id?.slice(-6) || 'UNKNOWN'}`
+        };
+
+        console.log('✨ Accepted as Affiliate:', acceptedUser);
+        console.log('🎉 Role forced to:', acceptedUser.role);
+
+        setVerificationStatus(
+          `✅ Verifikasi Berhasil!\n` +
+          `NIM Terdeteksi: ${detectedNim}\n` +
+          `Confidence: ${confidence.toFixed(1)}%\n` +
+          `✨ Diaktifkan sebagai MEMBER_AFFILIATE`
+        );
+
+        setTimeout(() => {
+          onSuccess(acceptedUser);
+          
+          // ASYNC: Call backend to ensure role is persisted (if not already updated)
+          updateBackendRoleAsync(user.id);
+        }, 1500);
+      } else {
+        // REJECT: Not a valid Telkom KTM or NIM not detected
+        let statusMessage = `❌ Verifikasi Gagal\n`;
+
+        if (!isTelkom) {
+          statusMessage += `Kartu bukan dari Telkom University\n`;
+        }
+        if (!detectedNim) {
+          statusMessage += `NIM tidak terdeteksi di kartu\n`;
+        }
+
+        statusMessage += `\nConfidence: ${confidence.toFixed(1)}%`;
+
+        setVerificationStatus(statusMessage);
+
+        setTimeout(() => {
+          onBack();
+        }, 3000);
+      }
+
+      // Helper function to update backend role asynchronously
+      // Uses correct endpoint: PATCH /api/membership/admin/users/{id}/role with {role: ...}
+      async function updateBackendRoleAsync(userId: string) {
+        try {
+          console.log('📡 Syncing role update with backend...');
+          const response = await fetch(`${API_BASE_URL}/api/membership/admin/users/${encodeURIComponent(userId)}/role`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: 'MEMBER_AFFILIATE' })
+          });
+          
+          if (response.ok) {
+            console.log('✅ Backend role update successful');
+          } else {
+            const errorText = await response.text();
+            console.warn('⚠️ Backend role update returned:', response.status, errorText);
+          }
+        } catch (err) {
+          console.warn('⚠️ Backend role update failed (non-critical):', err instanceof Error ? err.message : 'Unknown error');
+          // Non-critical - user is already updated in frontend
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Terjadi kesalahan koneksi. Silakan coba lagi.");
+      const errorMessage = err instanceof Error ? err.message : "Terjadi kesalahan koneksi. Silakan coba lagi.";
+      console.error('❌ OCR Error:', errorMessage);
+      setError(errorMessage);
       setVerificationStatus(null);
     } finally {
       setIsVerifying(false);

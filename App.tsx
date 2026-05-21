@@ -140,15 +140,23 @@ const App: React.FC = () => {
   const handleUpdateUser = async (updatedUser: User) => {
     setIsLoadingUpdate(true);
     try {
+      // Prepare payload dengan hanya field yang backend support
+      const updatePayload = {
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        photoURL: updatedUser.photoURL,
+        nim: updatedUser.nim  // Try to include NIM in the payload
+      };
+
       const response = await fetch(`${API_BASE_URL}/api/membership/profile/${updatedUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: updatedUser }),
+        body: JSON.stringify(updatePayload),
       });
       const result = await response.json();
       if (result.success) {
         const latest = result.data.user || result.data;
-        setUser({ ...latest, id: latest.user_id || latest.id } as any);
+        setUser({ ...latest, id: latest.user_id || latest.id, nim: updatedUser.nim } as any);
         alert('Profil berhasil diperbarui!');
       } else {
         alert('Gagal update: ' + (result.error || 'unknown'));

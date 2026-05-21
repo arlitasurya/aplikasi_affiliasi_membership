@@ -16,7 +16,8 @@ import {
   Trash2,
   QrCode,
   Copy,
-  CheckCircle
+  CheckCircle,
+  FileText
 } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
 
@@ -34,6 +35,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
   const [editForm, setEditForm] = useState({
     name: user.name,
     phone: user.phone || '',
+    nim: user.nim || '',
     photoURL: user.photoURL
   });
 
@@ -73,6 +75,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
         ...user,
         name: editForm.name,
         phone: editForm.phone,
+        nim: editForm.nim,
         photoURL: editForm.photoURL
       });
     }
@@ -254,6 +257,20 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
                   value={editForm.phone}
                   onChange={e => setEditForm({...editForm, phone: e.target.value})}
                   placeholder="Contoh: 0812xxxx"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NIM (NOMOR INDUK MAHASISWA)</label>
+              <div className="relative">
+                <FileText className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <input 
+                  className="w-full pl-14 pr-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:ring-4 focus:ring-orange-50 focus:border-orange-600 focus:bg-white outline-none transition-all font-bold text-slate-900"
+                  value={editForm.nim}
+                  onChange={e => setEditForm({...editForm, nim: e.target.value})}
+                  placeholder="Contoh: 3152201034"
+                  maxLength={12}
                 />
               </div>
             </div>
