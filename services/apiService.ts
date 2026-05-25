@@ -1,53 +1,63 @@
 import { API_BASE_URL } from '../constants';
 
-// KYC Server URL - untuk OCR processing
-// Use localhost for development, 172.20.10.2 for production network
-const getKycServerUrl = () => {
-  if (typeof window !== 'undefined') {
-    const kycUrl = process.env.REACT_APP_KYC_SERVER_URL;
-    if (kycUrl) return kycUrl;
-    
-    // Auto-detect: localhost for dev, IP for production
-    const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    
-    if (isLocalhost) {
-      return 'http://localhost:5001';
-    } else {
-      // For network access, use 172.20.10.2
-      return 'http://172.20.10.2:5001';
-    }
+/**
+ * Central Backend API URL - untuk KYC verification (OCR processing)
+ * Diambil dari .env file: VITE_CENTRAL_API_URL
+ * Default: http://172.20.10.2:4000 (jika tidak ada di .env)
+ * 
+ * Endpoint KYC: {CENTRAL_API_URL}/api/membership/affiliate/verify
+ */
+const getCentralApiUrl = () => {
+  // Gunakan import.meta.env untuk Vite
+  const centralUrl = (import.meta as any).env.VITE_CENTRAL_API_URL;
+  
+  if (centralUrl) {
+    console.log(`🔗 Using Central Backend from .env: ${centralUrl}`);
+    return centralUrl;
   }
-  return 'http://localhost:5001';
+  
+  // Fallback ke IP 172.20.10.2 jika tidak ada .env
+  const fallbackUrl = 'http://172.20.10.2:4000';
+  console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
+  return fallbackUrl;
 };
 
+
+
 /**
- * Verify KTM via KYC Server (OCR processing)
- * - Sends multipart/form-data dengan file asli (bukan base64)
- * - KYC server melakukan OCR dan forward ke central backend
- * - Returns verification result dengan auto-approval status
+ * Verify KTM via Central Backend KYC API
+ * - Backend performs OCR on image
+ * - Returns verification status (PENDING/APPROVED/REJECTED) + OCR data
  * 
  * @param userId - User ID
- * @param ktmFile - File object (File atau Blob) dari input file
+ * @param ktmFile - File object dari input file
+ * @returns verification object with status, ocr data
  */
-export async function verifyAffiliateKtm(userId: string, ktmFile: File) {
+export async function verifyAffiliateKtm(
+  userId: string,
+  ktmFile: File
+) {
   try {
-    const kycServerUrl = getKycServerUrl();
-    console.log(`📤 Sending to KYC Server: ${kycServerUrl}/api/affiliate/kyc/verify`);
+    const centralApiUrl = getCentralApiUrl();
+    const kycEndpoint = `${centralApiUrl}/api/membership/affiliate/verify`;
+    
+    console.log(`📤 Sending KTM to Central Backend: ${kycEndpoint}`);
     console.log(`📦 File info: name=${ktmFile.name}, size=${ktmFile.size} bytes, type=${ktmFile.type}`);
+    console.log(`👤 User ID: ${userId}`);
 
-    // Buat FormData dengan file asli (bukan base64)
+    // FormData dengan file + user_id saja
+    // Backend akan lakukan OCR dan return status + OCR data
     const formData = new FormData();
-    formData.append('ktm_image', ktmFile);  // Nama field: ktm_image
+    formData.append('ktm_image', ktmFile);
     formData.append('user_id', userId);
 
-    console.log('📤 Sending FormData with multipart/form-data...');
+    console.log('📤 Sending FormData to backend...');
+    console.log('📋 FormData fields: ktm_image, user_id');
+    console.log('📝 Backend akan lakukan OCR dan return status (PENDING/APPROVED/REJECTED)');
 
-    const response = await fetch(`${kycServerUrl}/api/affiliate/kyc/verify`, {
+    const response = await fetch(kycEndpoint, {
       method: 'POST',
       body: formData
-      // PENTING: JANGAN set Content-Type header manual
-      // Browser akan otomatis set Content-Type: multipart/form-data dengan boundary yang benar
     });
 
     console.log(`📥 Response status: ${response.status}`);

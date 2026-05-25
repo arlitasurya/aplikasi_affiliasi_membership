@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
-import { Camera, RefreshCw, CheckCircle, AlertCircle, Sparkles, ArrowLeft, Upload, FileText } from 'lucide-react';
+import { Camera, RefreshCw, CheckCircle, AlertCircle, Sparkles, ArrowLeft, Upload } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { verifyAffiliateKtm } from '../services/apiService';
 import { API_BASE_URL } from '../constants';
@@ -58,18 +58,17 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
   const handleUpgrade = async (imageData: string) => {
     if (!imageData) return;
 
-    const registeredNim = normalizeNim(user.nim);
-    if (!registeredNim) {
-      setError('NIM akun Anda belum terdaftar. Mohon lengkapi NIM saat registrasi/di profil sebelum upgrade afiliasi.');
-      return;
-    }
-
     setIsVerifying(true);
-    setVerificationStatus('Mengunggah KTM dan menunggu verifikasi server...');
+    setVerificationStatus('📤 Mengunggah KTM ke server...');
     setError(null);
 
     try {
       const fileToUpload = ktmFile || await dataUrlToFile(imageData, `ktm-${user.id || 'upload'}.jpg`);
+      
+      console.log('📸 Starting KTM verification upload...');
+      console.log(`📤 Uploading to backend: user_id=${user.id}`);
+      
+      // Backend akan lakukan OCR dan return status + OCR data
       const result = await verifyAffiliateKtm(user.id, fileToUpload);
 
       console.log('✅ KYC Verification Response:', result);
@@ -81,62 +80,31 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
         return;
       }
 
-      const kycData = result.data || {};
-      console.log('📋 KYC Data:', {
-        detected_nim: kycData.detected_nim,
-        ai_is_telkom: kycData.ai_is_telkom,
-        ai_confidence: kycData.ai_confidence,
-        auto_approved: kycData.auto_approved,
-        has_central_response: !!kycData.central_response
-      });
-
-      // Extract verification details from KYC response
-      const detectedNim = kycData.detected_nim || null;
-      const isTelkom = kycData.ai_is_telkom || false;
-      const confidence = (kycData.ai_confidence || 0) * 100;
-      const autoApproved = kycData.auto_approved || false;
-
-      console.log(`📊 OCR Results: NIM=${detectedNim}, Telkom=${isTelkom}, Confidence=${confidence.toFixed(1)}%, AutoApproved=${autoApproved}`);
-      console.log(`🔍 Reasoning: ${kycData.ai_reasoning || 'No reason provided'}`);
-
-      // Handle auto-approval result from central backend (if included)
-      let centralResponse = kycData.central_response || {};
-      let userData = centralResponse?.data?.user || {};
+      const verification = result.data?.verification || {};
+      const ocrData = result.data?.ocr || {};
+      const status = verification.status || 'PENDING';
       
-      // Backend returns referral_code as separate field in response, not in user object
-      const backendReferralCode = centralResponse?.data?.referral_code || 
-                                  centralResponse?.data?.affiliate_network?.referral_code || 
-                                  null;
+      console.log('📋 Verification Response:', { status, verification, ocr: ocrData });
 
-      console.log('📦 Central Response:', centralResponse);
-      console.log('👤 User Data from Central:', userData);
-      console.log('🔑 Referral Code from Backend:', backendReferralCode);
+      // Extract OCR details from response
+      const detectedNim = ocrData.detectedNim || null;
+      const confidence = (ocrData.avgConfidence || 0) * 100;
+      const isTelkom = ocrData.isTelkom || false;
 
-      // ENHANCED LOGIC: Accept if Telkom + detectedNim, even if confidence slightly below threshold
-      // This is more lenient than KYC server's auto-approval (0.9 threshold)
-      const shouldAcceptAsAffiliate = isTelkom && detectedNim;
+      console.log(`📊 OCR Result: NIM=${detectedNim}, Telkom=${isTelkom}, Confidence=${confidence.toFixed(1)}%, Status=${status}`);
 
-      console.log(`🔄 Decision Logic: isTelkom=${isTelkom}, detectedNim=${detectedNim}, shouldAccept=${shouldAcceptAsAffiliate}`);
+      // Accept only if backend says APPROVED
+      const shouldAcceptAsAffiliate = status === 'APPROVED';
 
       if (shouldAcceptAsAffiliate) {
-        // ACCEPT: Valid Telkom KTM with NIM detected
-        // Use backend data if available, otherwise create fallback
-        const finalUserData = Object.keys(userData).length > 0 ? userData : null;
-        
+        // APPROVED by backend
         const acceptedUser: User = {
           ...user,
-          ...(finalUserData || {}),
-          id: finalUserData?.user_id || finalUserData?.id || user.id,
-          role: (finalUserData?.role as any) || UserRole.MEMBER_AFFILIATE,  // Use backend role if available
-          status: (finalUserData?.status as any) || 'ACTIVE',  // Use backend status if available
-          totalPoints: finalUserData?.total_points || finalUserData?.totalPoints || user.totalPoints || 0,
-          cashbackPoints: finalUserData?.cashback_points || finalUserData?.cashbackPoints || user.cashbackPoints || 0,
-          commissionPoints: finalUserData?.commission_points || finalUserData?.commissionPoints || user.commissionPoints || 0,
-          referralCode: backendReferralCode || finalUserData?.referral_code || finalUserData?.referralCode || user.referralCode || `REF_${user.id?.slice(-6) || 'UNKNOWN'}`
+          role: UserRole.MEMBER_AFFILIATE,
+          referralCode: user.referralCode || `REF_${user.id?.slice(-6) || 'UNKNOWN'}`
         };
 
-        console.log('✨ Accepted as Affiliate:', acceptedUser);
-        console.log('🎉 Role forced to:', acceptedUser.role);
+        console.log('✨ Approved as Affiliate:', acceptedUser);
 
         setVerificationStatus(
           `✅ Verifikasi Berhasil!\n` +
@@ -146,29 +114,42 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
         );
 
         setTimeout(() => {
+          // Call parent with upgraded user (role = MEMBER_AFFILIATE)
           onSuccess(acceptedUser);
-          
-          // ASYNC: Call backend to ensure role is persisted (if not already updated)
+          // Also sync role update with backend (non-blocking)
           updateBackendRoleAsync(user.id);
         }, 1500);
       } else {
-        // REJECT: Not a valid Telkom KTM or NIM not detected
-        let statusMessage = `❌ Verifikasi Gagal\n`;
-
-        if (!isTelkom) {
-          statusMessage += `Kartu bukan dari Telkom University\n`;
+        // PENDING or REJECTED by backend
+        let statusMessage = '';
+        
+        if (status === 'PENDING') {
+          statusMessage = `⏳ Verifikasi Tertunda\n\n` +
+                          `Gambar kurang jelas atau confidence rendah.\n` +
+                          `Coba ambil foto KTM yang lebih fokus:\n\n` +
+                          `💡 Tips:\n` +
+                          `• Pastikan kartu terlihat jelas tanpa blur\n` +
+                          `• Pencahayaan cukup terang\n` +
+                          `• Kartu mengisi seluruh frame\n` +
+                          `• Tidak ada bayangan atau refleksi\n\n` +
+                          `Confidence: ${confidence.toFixed(1)}%`;
+        } else {
+          // REJECTED
+          statusMessage = `❌ Verifikasi Gagal\n\n`;
+          if (!isTelkom) {
+            statusMessage += `Kartu bukan dari Telkom University\n`;
+          }
+          if (!detectedNim) {
+            statusMessage += `NIM tidak terdeteksi di kartu\n`;
+          }
+          statusMessage += `\nConfidence: ${confidence.toFixed(1)}%`;
         }
-        if (!detectedNim) {
-          statusMessage += `NIM tidak terdeteksi di kartu\n`;
-        }
-
-        statusMessage += `\nConfidence: ${confidence.toFixed(1)}%`;
 
         setVerificationStatus(statusMessage);
 
         setTimeout(() => {
           onBack();
-        }, 3000);
+        }, status === 'PENDING' ? 4000 : 3000);
       }
 
       // Helper function to update backend role asynchronously
@@ -330,7 +311,7 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
             {verificationStatus && (
               <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start space-x-3 text-emerald-700">
                 <CheckCircle size={20} className="shrink-0 mt-0.5" />
-                <p className="text-sm font-bold">{verificationStatus}</p>
+                <p className="text-sm font-bold whitespace-pre-line">{verificationStatus}</p>
               </div>
             )}
 

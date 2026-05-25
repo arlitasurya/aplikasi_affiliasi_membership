@@ -20,7 +20,7 @@ const AdminGlobalSettings: React.FC = () => {
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/membership/admin/settings`, { method: 'GET' });
+      const response = await fetch(`${API_BASE_URL}/api/membership/settings`, { method: 'GET' });
       const result = await response.json();
       if (result.success) {
         setSettings(result.data || {});
@@ -39,10 +39,10 @@ const AdminGlobalSettings: React.FC = () => {
   const handleUpdateSetting = async (key: string, value: string) => {
     setIsSaving(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/membership/admin/settings`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/api/membership/settings/${key}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key, value })
+        body: JSON.stringify({ value })
       });
       const result = await response.json();
       if (result.success) {

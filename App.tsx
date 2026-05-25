@@ -137,6 +137,14 @@ const App: React.FC = () => {
     setActiveTab('dashboard');
   };
 
+  const handleUpgradeAffiliateSuccess = (upgradedUser: User) => {
+    console.log('✨ User upgrade successful, new role:', upgradedUser.role);
+    // Update user state with MEMBER_AFFILIATE role + referral code
+    setUser(upgradedUser);
+    // Switch to dashboard - routing will auto-detect MEMBER_AFFILIATE and show AffiliateDashboard
+    setActiveTab('dashboard');
+  };
+
   const handleUpdateUser = async (updatedUser: User) => {
     setIsLoadingUpdate(true);
     try {
@@ -304,7 +312,7 @@ const App: React.FC = () => {
       case 'profile':
         return <Profile user={user} onUpdateUser={handleUpdateUser} />;
       case 'upgrade_affiliate':
-        return <UpgradeAffiliate user={user} onBack={() => setActiveTab('dashboard')} onSuccess={handleLoginSuccess} />;
+        return <UpgradeAffiliate user={user} onBack={() => setActiveTab('dashboard')} onSuccess={handleUpgradeAffiliateSuccess} />;
       default:
         return (
           <div className="p-20 text-center bg-white rounded-3xl border border-slate-100">
