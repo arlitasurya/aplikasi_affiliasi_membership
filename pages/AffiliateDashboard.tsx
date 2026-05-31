@@ -1,14 +1,174 @@
 import React, { useState, useEffect } from 'react';
-import { User, Copy, Share2, TrendingUp, Users, Award, ArrowLeft } from 'lucide-react';
-import { User as UserType } from '../types';
+import { User, Copy, Share2, TrendingUp, Users, Award, ArrowLeft, Zap } from 'lucide-react';
+import { User as UserType, AffiliateLevel } from '../types';
+import { getAffiliateNetwork, getAffiliateStats } from '../services/apiService';
 
 interface AffiliateDashboardProps {
   user: UserType;
   onBack: () => void;
 }
 
+interface AffiliateData {
+  // From affiliate_networks.total_referrals
+  totalDownlines: number;
+  
+  // From affiliate_networks.commission_points - NOT user poin biasa
+  totalCommission: number;
+  
+  // From affiliate_networks.total_points - NOT user.totalPoints
+  // This is affiliate-specific poin, separate dari user_points table
+  totalPoints: number;
+  
+  // From affiliate_networks.affiliate_tier
+  affiliateLevel: AffiliateLevel;
+  
+  levelProgress: number;
+  nextLevelTarget: number;
+  commissionBreakdown: {
+    poinKomisi: number;
+    poinCashback: number;
+  };
+}
+
+// Define affiliate level thresholds
+const AFFILIATE_LEVELS = {
+  [AffiliateLevel.STARTER]: { min: 0, max: 9, minCommission: 0 },
+  [AffiliateLevel.PRO]: { min: 10, max: 49, minCommission: 5000 },
+  [AffiliateLevel.ELITE]: { min: 50, max: Infinity, minCommission: 15000 }
+};
+
+/**
+ * Normalize backend tier names to frontend tier names
+ * Backend sends from affiliate_networks.affiliate_tier: "Basic", "Pro", "Elite"
+ * Frontend displays: "Starter", "Pro", "Elite"
+ */
+const mapBackendTierToFrontend = (backendTier: string): AffiliateLevel => {
+  const tierMap: Record<string, AffiliateLevel> = {
+    'Basic': AffiliateLevel.STARTER,
+    'Starter': AffiliateLevel.STARTER,
+    'Pro': AffiliateLevel.PRO,
+    'Elite': AffiliateLevel.ELITE
+  };
+  
+  return tierMap[backendTier] || AffiliateLevel.STARTER;
+};
+
+const calculateAffiliateLevel = (downlines: number): AffiliateLevel => {
+  if (downlines >= 50) return AffiliateLevel.ELITE;
+  if (downlines >= 10) return AffiliateLevel.PRO;
+  return AffiliateLevel.STARTER;
+};
+
+const calculateLevelProgress = (downlines: number): { progress: number; target: number; level: AffiliateLevel } => {
+  const level = calculateAffiliateLevel(downlines);
+  const levelConfig = AFFILIATE_LEVELS[level];
+  
+  let progress = 0;
+  let nextTarget = levelConfig.max + 1;
+  
+  if (level === AffiliateLevel.STARTER) {
+    progress = (downlines / 10) * 100;
+    nextTarget = 10;
+  } else if (level === AffiliateLevel.PRO) {
+    progress = ((downlines - 10) / 40) * 100;
+    nextTarget = 50;
+  } else {
+    progress = 100;
+    nextTarget = downlines;
+  }
+  
+  return {
+    progress: Math.min(100, Math.max(0, progress)),
+    target: nextTarget,
+    level
+  };
+};
+
 const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, onBack }) => {
   const [copiedCode, setCopiedCode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  /**
+   * Initialize with empty affiliate data
+   * NOTE: Do NOT use user.totalPoints - that's from user_points table
+   * This dashboard uses affiliate_networks.total_points instead
+   */
+  const [affiliateData, setAffiliateData] = useState<AffiliateData>({
+    totalDownlines: 0,
+    totalCommission: 0,
+    totalPoints: 0,
+    affiliateLevel: AffiliateLevel.STARTER,
+    levelProgress: 0,
+    nextLevelTarget: 10,
+    commissionBreakdown: {
+      poinKomisi: 0,
+      poinCashback: 0
+    }
+  });
+
+  useEffect(() => {
+    const fetchAffiliateData = async () => {
+      try {
+        setLoading(true);
+        
+        /**
+         * Fetch affiliate data from affiliate_networks table
+         * Source backend: affiliate_networks (NOT user_points)
+         * Fields mapping:
+         * - backend.total_referrals → frontend.totalDownlines
+         * - backend.commission_points → frontend.totalCommission
+         * - backend.total_points → frontend.totalPoints
+         * - backend.affiliate_tier → frontend.affiliateLevel
+         */
+        const networkData = await getAffiliateNetwork(user.id);
+        const statsData = await getAffiliateStats(user.id);
+        
+        if (networkData || statsData) {
+          // Use networkData as primary source (has more fields)
+          const data = networkData || statsData;
+          
+          const downlines = data?.totalDownlines || 0;
+          const commission = data?.totalCommission || 0;
+          const points = data?.totalPoints || 0;
+          
+          const levelInfo = calculateLevelProgress(downlines);
+          
+          setAffiliateData({
+            totalDownlines: downlines,
+            totalCommission: commission,
+            totalPoints: points,
+            affiliateLevel: levelInfo.level,
+            levelProgress: levelInfo.progress,
+            nextLevelTarget: levelInfo.target,
+            commissionBreakdown: {
+              poinKomisi: commission,
+              poinCashback: points - commission
+            }
+          });
+          
+          console.log('✅ Affiliate data synced from affiliate_networks table:', {
+            downlines,
+            commission,
+            points,
+            level: levelInfo.level
+          });
+        } else {
+          /**
+           * Fallback: If backend fails, show empty data
+           * Do NOT fallback to user object properties
+           * because user.totalPoints is from user_points table, not affiliate_networks
+           */
+          console.log('ℹ️ Backend affiliate_networks endpoint not responsive, showing empty affiliate data');
+        }
+      } catch (error) {
+        console.error('Error fetching affiliate data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAffiliateData();
+  }, [user.id]);
 
   const copyReferralCode = () => {
     if (user.referralCode) {
@@ -41,57 +201,104 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, onBack })
         >
           <ArrowLeft size={24} className="text-orange-700" />
         </button>
-        <h1 className="text-3xl font-bold text-orange-900">Affiliate Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-orange-900">Dashboard Afiliasi</h1>
+          <p className="text-orange-700">Pantau pertumbuhan jaringan dan komisi Anda.</p>
+        </div>
       </div>
 
-      {/* Welcome Card */}
+      {/* Welcome Card with Level Badge */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-[2.5rem] shadow-lg p-8 mb-8 text-white">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="bg-white/20 p-4 rounded-full">
-            <User size={40} />
-          </div>
+        <div className="flex items-center justify-between">
           <div>
-            <p className="text-orange-100">Selamat datang,</p>
-            <h2 className="text-2xl font-bold">{user.name}</h2>
+            <p className="text-orange-100 text-sm uppercase font-semibold">AFFILIATE PARTNER</p>
+            <h2 className="text-2xl font-bold mt-2">{user.name}</h2>
+          </div>
+          <div className="text-right">
+            <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full backdrop-blur">
+              <Zap size={20} className="text-yellow-300" />
+              <span className="font-bold text-lg">{affiliateData.affiliateLevel}</span>
+            </div>
           </div>
         </div>
-        <p className="text-orange-50 mt-2">Anda telah resmi menjadi <span className="font-bold">MEMBER AFFILIATE</span> NgolabHub! 🎉</p>
       </div>
 
-      {/* Referral Code Section */}
-      <div className="bg-white rounded-[2.5rem] shadow-lg p-8 mb-8">
-        <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-          <Award size={24} className="text-orange-600" />
-          Kode Referral Anda
-        </h3>
-        
-        <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-6 mb-4">
-          <p className="text-slate-600 text-sm mb-2">Bagikan kode ini ke teman:</p>
-          <div className="flex items-center gap-3">
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Referral Code */}
+        <div className="bg-white rounded-[2.5rem] shadow-lg p-6">
+          <h3 className="text-sm font-bold text-slate-600 uppercase mb-3">Kode Referral Anda</h3>
+          <div className="flex items-center gap-3 mb-4">
             <code className="text-2xl font-mono font-bold text-orange-600 flex-1">
               {user.referralCode || 'N/A'}
             </code>
             <button
               onClick={copyReferralCode}
-              className="p-3 hover:bg-orange-200 rounded-lg transition-colors"
+              className="p-2 hover:bg-orange-100 rounded-lg transition-colors"
               title="Copy referral code"
             >
-              <Copy size={24} className={copiedCode ? 'text-green-600' : 'text-orange-600'} />
+              <Copy size={20} className={copiedCode ? 'text-green-600' : 'text-orange-600'} />
             </button>
           </div>
-          {copiedCode && <p className="text-green-600 text-sm mt-2">✓ Kode disalin!</p>}
+          <button
+            onClick={shareReferral}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-3 rounded-xl transition-colors text-sm"
+          >
+            <Share2 size={16} className="inline mr-2" />
+            Bagikan Kode
+          </button>
         </div>
 
-        <button
-          onClick={shareReferral}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
-        >
-          <Share2 size={20} />
-          Bagikan Kode Referral
-        </button>
+        {/* Total Saldo Poin */}
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] shadow-lg p-6 text-white">
+          <h3 className="text-sm font-bold text-orange-100 uppercase mb-3">Total Saldo Poin</h3>
+          <div className="mb-4">
+            <p className="text-4xl font-bold mb-1">{affiliateData.totalPoints.toLocaleString('id-ID')}</p>
+            <p className="text-orange-100 text-sm">Gabungan Member & Affiliasi</p>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between items-center bg-white/10 px-3 py-2 rounded-lg">
+              <span>👥 Total Referral</span>
+              <span className="font-bold">{affiliateData.totalDownlines} Member</span>
+            </div>
+            <div className="flex justify-between items-center bg-white/10 px-3 py-2 rounded-lg">
+              <span>⭐ Poin Komisi</span>
+              <span className="font-bold">{affiliateData.commissionBreakdown.poinKomisi.toLocaleString('id-ID')} PTS</span>
+            </div>
+            <div className="flex justify-between items-center bg-white/10 px-3 py-2 rounded-lg">
+              <span>💰 Poin Cashback</span>
+              <span className="font-bold">{affiliateData.commissionBreakdown.poinCashback.toLocaleString('id-ID')} PTS</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Level Afiliasi */}
+        <div className="bg-white rounded-[2.5rem] shadow-lg p-6">
+          <h3 className="text-sm font-bold text-slate-600 uppercase mb-3">Level Afiliasi</h3>
+          <div className="text-4xl font-bold text-orange-600 mb-4">{affiliateData.affiliateLevel}</div>
+          
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-semibold text-slate-600">Progress Level</span>
+              <span className="text-sm font-bold text-orange-600">{Math.round(affiliateData.levelProgress)}%</span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${affiliateData.levelProgress}%` }}
+              />
+            </div>
+          </div>
+          
+          <p className="text-xs text-slate-600">
+            {affiliateData.affiliateLevel === AffiliateLevel.ELITE
+              ? '✨ Maksimal Level Tercapai!'
+              : `Butuh ${affiliateData.nextLevelTarget - affiliateData.totalDownlines} member lagi untuk naik level`}
+          </p>
+        </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Referral Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Downlines */}
         <div className="bg-white rounded-[2.5rem] shadow-lg p-6">
@@ -99,9 +306,9 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, onBack })
             <div className="bg-blue-100 p-3 rounded-lg">
               <Users size={24} className="text-blue-600" />
             </div>
-            <h4 className="font-bold text-slate-900">Downline Anda</h4>
+            <h4 className="font-bold text-slate-900">Total Referral</h4>
           </div>
-          <p className="text-3xl font-bold text-blue-600 mb-2">0</p>
+          <p className="text-4xl font-bold text-blue-600 mb-2">{affiliateData.totalDownlines}</p>
           <p className="text-slate-600 text-sm">Teman yang bergabung via kode Anda</p>
         </div>
 
@@ -111,59 +318,75 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, onBack })
             <div className="bg-green-100 p-3 rounded-lg">
               <TrendingUp size={24} className="text-green-600" />
             </div>
-            <h4 className="font-bold text-slate-900">Komisi Anda</h4>
+            <h4 className="font-bold text-slate-900">Komisi Total</h4>
           </div>
-          <p className="text-3xl font-bold text-green-600 mb-2">
-            Rp {(user.commissionPoints || 0).toLocaleString('id-ID')}
+          <p className="text-4xl font-bold text-green-600 mb-2">
+            {affiliateData.totalCommission.toLocaleString('id-ID')} PTS
           </p>
           <p className="text-slate-600 text-sm">Total komisi yang diterima</p>
         </div>
       </div>
 
+      {/* Level System Info */}
+      <div className="bg-white rounded-[2.5rem] shadow-lg p-8 mb-8">
+        <h3 className="text-xl font-bold text-slate-900 mb-6">Sistem Level Afiliasi</h3>
+        
+        <div className="space-y-4">
+          <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl border-l-4 border-blue-500">
+            <div className="text-3xl font-bold text-blue-600 w-12">⭐</div>
+            <div>
+              <h4 className="font-bold text-slate-900">Starter (0-9 Member)</h4>
+              <p className="text-slate-600 text-sm">Level awal untuk affiliate baru. Mulai bangun jaringan Anda dengan mengajak member.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4 p-4 bg-orange-50 rounded-xl border-l-4 border-orange-500">
+            <div className="text-3xl font-bold text-orange-600 w-12">🔥</div>
+            <div>
+              <h4 className="font-bold text-slate-900">Pro (10-49 Member)</h4>
+              <p className="text-slate-600 text-sm">Tingkat menengah. Komisi meningkat 2x lipat dari level Starter. Butuh 10 member untuk naik ke level ini.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-xl border-l-4 border-purple-500">
+            <div className="text-3xl font-bold text-purple-600 w-12">👑</div>
+            <div>
+              <h4 className="font-bold text-slate-900">Elite (50+ Member)</h4>
+              <p className="text-slate-600 text-sm">Level tertinggi. Komisi maksimal 3x lipat. Bonus eksklusif dan benefit premium menanti Anda.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Features Section */}
       <div className="bg-white rounded-[2.5rem] shadow-lg p-8">
-        <h3 className="text-xl font-bold text-slate-900 mb-6">Fitur Affiliate Anda</h3>
+        <h3 className="text-xl font-bold text-slate-900 mb-6">Cara Mengoptimalkan Komisi Anda</h3>
         
         <div className="space-y-4">
           <div className="flex items-start gap-4 p-4 bg-orange-50 rounded-xl">
             <div className="text-2xl">🎁</div>
             <div>
-              <h4 className="font-bold text-slate-900">Dapatkan Komisi</h4>
-              <p className="text-slate-600 text-sm">Setiap orang yang bergabung via kode Anda akan memberi Anda komisi</p>
+              <h4 className="font-bold text-slate-900">Bagikan Kode Referral</h4>
+              <p className="text-slate-600 text-sm">Setiap orang yang bergabung melalui kode referral Anda akan otomatis menjadi downline Anda.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl">
             <div className="text-2xl">📊</div>
             <div>
-              <h4 className="font-bold text-slate-900">Monitor Penjualan</h4>
-              <p className="text-slate-600 text-sm">Lihat statistik downline dan komisi real-time</p>
+              <h4 className="font-bold text-slate-900">Monitor Real-time</h4>
+              <p className="text-slate-600 text-sm">Lihat statistik downline dan komisi yang terupdate secara real-time di dashboard ini.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-green-50 rounded-xl">
             <div className="text-2xl">🚀</div>
             <div>
-              <h4 className="font-bold text-slate-900">Kembangkan Jaringan</h4>
-              <p className="text-slate-600 text-sm">Semakin banyak downline, semakin besar penghasilan Anda</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-xl">
-            <div className="text-2xl">💳</div>
-            <div>
-              <h4 className="font-bold text-slate-900">Withdraw Komisi</h4>
-              <p className="text-slate-600 text-sm">Tarik komisi Anda kapan saja ke rekening bank</p>
+              <h4 className="font-bold text-slate-900">Naik Level, Dapat Bonus</h4>
+              <p className="text-slate-600 text-sm">Semakin banyak member yang bergabung, level Anda akan naik dan komisi semakin besar!</p>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Info Box */}
-      <div className="mt-8 bg-blue-50 border-l-4 border-blue-600 rounded-lg p-4">
-        <p className="text-blue-900 text-sm">
-          <strong>💡 Tips:</strong> Bagikan kode referral Anda ke media sosial, grup WhatsApp, atau teman-teman untuk mulai mendapatkan komisi!
-        </p>
       </div>
     </div>
   );

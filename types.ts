@@ -35,18 +35,20 @@ export interface User {
   ai_confidence?: number;
   ai_reasoning?: string;
   
-  // Member specific
+  // Member specific fields (from user_points table)
   level?: MemberLevel;
-  totalPoints?: number;
-  cashbackPoints?: number;
+  totalPoints?: number; // From user_points.total_points - untuk member biasa
+  cashbackPoints?: number; // From user_points
   pointLogs?: PointLog[];
 
-  // Affiliate specific
+  // Affiliate specific fields
+  // NOTE: For affiliate dashboard, fetch from affiliate_networks endpoint instead
+  // These are legacy/optional fields and may not reflect current affiliate_networks data
   referralCode?: string;
   affiliateLevel?: AffiliateLevel;
   totalDownlines?: number;
   totalReferralTransactions?: number; 
-  commissionPoints?: number;
+  commissionPoints?: number; // Legacy - use affiliate_networks.commission_points instead
   
   // Legacy/App specific fields
   nim?: string;

@@ -1,9 +1,64 @@
 import { API_BASE_URL } from '../constants';
 
 /**
+ * Normalize backend response to frontend format
+ * Backend fields (per backend team):
+ * - totalReferrals → total referral (dari affiliate_networks.total_referrals)
+ * - totalDownlines → total downlines (alias untuk totalReferrals)
+ * - totalCommission → commission points (dari affiliate_networks.commission_points)
+ * - totalPoints → total poin affiliate (dari affiliate_networks.total_points)
+ * - affiliateTier → affiliate tier/level
+ * - referralCode → kode referral user
+ * - affiliateId → ID di affiliate_networks table
+ * 
+ * Normalize tier: "Basic" → "Starter", "Pro" → "Pro", "Elite" → "Elite"
+ */
+const normalizeAffiliateResponse = (data: any): any => {
+  if (!data) return data;
+  
+  console.log('📥 Backend response data:', data);
+  
+  // Handle different tier field names from backend
+  let tier = data.affiliateTier || data.affiliateLevel || data.level || 'Basic';
+  
+  const tierMap: Record<string, string> = {
+    'Basic': 'Starter',
+    'Starter': 'Starter',
+    'Pro': 'Pro',
+    'Elite': 'Elite'
+  };
+  
+  // Normalize response format - map backend fields to frontend format
+  const normalized = {
+    // Backend send totalReferrals & totalDownlines (both refer to same value)
+    // Frontend use totalDownlines consistently
+    totalDownlines: data.totalDownlines || data.totalReferrals || 0,
+    
+    // Backend send totalCommission (not commissionPoints)
+    totalCommission: data.totalCommission || 0,
+    
+    // Backend send totalPoints
+    totalPoints: data.totalPoints || 0,
+    
+    // Tier mapping
+    affiliateLevel: tierMap[tier] || 'Starter',
+    
+    // Referral code & affiliate ID
+    referralCode: data.referralCode || '',
+    affiliateId: data.affiliateId || '',
+    
+    // Keep all original fields for debugging
+    ...data
+  };
+  
+  console.log('✅ Normalized affiliate data:', normalized);
+  return normalized;
+};
+
+/**
  * Central Backend API URL - untuk KYC verification (OCR processing)
  * Diambil dari .env file: VITE_CENTRAL_API_URL
- * Default: http://172.20.10.2:4000 (jika tidak ada di .env)
+ * Default: http://192.168.110.6:4000 (jika tidak ada di .env)
  * 
  * Endpoint KYC: {CENTRAL_API_URL}/api/membership/affiliate/verify
  */
@@ -16,8 +71,8 @@ const getCentralApiUrl = () => {
     return centralUrl;
   }
   
-  // Fallback ke IP 172.20.10.2 jika tidak ada .env
-  const fallbackUrl = 'http://172.20.10.2:4000';
+  // Fallback ke IP 192.168.110.6 jika tidak ada .env (per backend team)
+  const fallbackUrl = 'http://192.168.110.6:4000';
   console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
   return fallbackUrl;
 };
@@ -80,5 +135,206 @@ export async function verifyAffiliateKtm(
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error('❌ KYC API Error:', errorMsg);
     throw error;
+  }
+}
+
+/**
+ * Get Affiliate Network Data from affiliate_networks table
+ * 
+ * Field Mapping (from affiliate_networks table):
+ * - total_referrals → totalDownlines
+ * - commission_points → totalCommission (NOT user.commissionPoints)
+ * - total_points → totalPoints (NOT user.totalPoints from user_points table)
+ * - affiliate_tier → affiliateLevel
+ * 
+ * @param userId - User ID dari affiliate
+ * @param token - Auth token (opsional)
+ * @returns affiliate network object with downlines, commission, points from affiliate_networks
+ */
+export async function getAffiliateNetwork(userId: string, token?: string) {
+  try {
+    const centralApiUrl = getCentralApiUrl();
+    const endpoint = `${centralApiUrl}/api/membership/affiliate/network/${userId}`;
+    
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📡 FETCHING AFFILIATE NETWORK DATA`);
+    console.log(`${'='.repeat(60)}`);
+    console.log(`🔗 Endpoint: ${endpoint}`);
+    console.log(`👤 User ID: ${userId}`);
+    console.log(`🔑 Auth Token: ${token ? 'YES' : 'NO (akan send tanpa auth)'}`);
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log(`📌 Will send Authorization header: Bearer ${token.substring(0, 20)}...`);
+    }
+    
+    console.log(`📤 Sending GET request with headers:`, headers);
+    
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers,
+      credentials: 'include' // Send cookies if backend uses them
+    });
+
+    console.log(`\n📥 RESPONSE RECEIVED`);
+    console.log(`📊 Status: ${response.status} ${response.statusText}`);
+    console.log(`📋 Response Headers:`, {
+      'content-type': response.headers.get('content-type'),
+      'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+    });
+    
+    let result: any;
+    try {
+      result = await response.json();
+      console.log(`📦 Raw JSON Response:`, result);
+    } catch (err) {
+      console.error('❌ Failed to parse JSON response:', err);
+      console.log(`📄 Response text:`, await response.text());
+      return null;
+    }
+    
+    // Check for success
+    if (response.ok) {
+      console.log(`✅ Response OK (2xx status)`);
+      
+      // Handle wrapped format: {success: true, data: {...}}
+      if (result?.data) {
+        console.log(`📦 Response format: WRAPPED {data: {...}}`);
+        const normalizedData = normalizeAffiliateResponse(result.data);
+        console.log(`✅ Affiliate network fetched successfully:`, normalizedData);
+        return normalizedData;
+      } 
+      // Handle direct format: {...}
+      else if (result) {
+        console.log(`📦 Response format: DIRECT {...}`);
+        const normalizedData = normalizeAffiliateResponse(result);
+        console.log(`✅ Affiliate network fetched successfully:`, normalizedData);
+        return normalizedData;
+      }
+    }
+
+    // Handle errors
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`❌ NETWORK FETCH FAILED`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`Status: ${response.status} ${response.statusText}`);
+    console.warn(`Response:`, result);
+    
+    if (response.status === 403 || response.status === 401) {
+      console.error(`🔒 Auth Error - Check if token is valid or if endpoint requires auth`);
+    }
+    if (response.status === 404) {
+      console.error(`🚫 Endpoint not found - Verify backend URL and endpoint path`);
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn(`${'='.repeat(60)}`);
+    console.error(`❌ FETCH EXCEPTION ERROR`);
+    console.warn(`${'='.repeat(60)}`);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Error type: ${error instanceof TypeError ? 'NETWORK/CORS' : 'OTHER'}`);
+    console.error(`Error message: ${errorMsg}`);
+    console.error(`Full error:`, error);
+    
+    if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
+      console.error(`\n🌐 CORS TROUBLESHOOTING:`);
+      console.error(`   1. Check browser console for CORS error message`);
+      console.error(`   2. Backend team should add frontend origin to FRONTEND_ORIGIN env var`);
+      console.error(`   3. Current frontend origin: ${window.location.origin}`);
+    }
+    
+    return null;
+  }
+}
+
+/**
+ * Get Affiliate Stats Summary
+ * 
+ * Field Mapping (from affiliate_networks table):
+ * - total_referrals → totalDownlines
+ * - commission_points → totalCommission (NOT user.commissionPoints)
+ * - total_points → totalPoints (NOT user.totalPoints from user_points table)
+ * 
+ * @param userId - User ID dari affiliate
+ * @param token - Auth token (opsional)
+ * @returns affiliate stats object from affiliate_networks
+ */
+export async function getAffiliateStats(userId: string, token?: string) {
+  try {
+    const centralApiUrl = getCentralApiUrl();
+    const endpoint = `${centralApiUrl}/api/membership/affiliate/stats/${userId}`;
+    
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📊 FETCHING AFFILIATE STATS (FALLBACK)`);
+    console.log(`${'='.repeat(60)}`);
+    console.log(`🔗 Endpoint: ${endpoint}`);
+    console.log(`👤 User ID: ${userId}`);
+    console.log(`🔑 Auth Token: ${token ? 'YES' : 'NO'}`);
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers,
+      credentials: 'include'
+    });
+
+    console.log(`\n📥 RESPONSE RECEIVED`);
+    console.log(`📊 Status: ${response.status} ${response.statusText}`);
+    console.log(`📋 Response Headers:`, {
+      'content-type': response.headers.get('content-type'),
+      'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+    });
+    
+    let result: any;
+    try {
+      result = await response.json();
+      console.log(`📦 Raw JSON Response:`, result);
+    } catch (err) {
+      console.error('❌ Failed to parse JSON response:', err);
+      return null;
+    }
+    
+    if (response.ok) {
+      console.log(`✅ Response OK (2xx status)`);
+      
+      if (result?.data) {
+        console.log(`📦 Response format: WRAPPED {data: {...}}`);
+        const normalizedData = normalizeAffiliateResponse(result.data);
+        console.log('✅ Affiliate stats fetched successfully:', normalizedData);
+        return normalizedData;
+      } else if (result) {
+        console.log(`📦 Response format: DIRECT {...}`);
+        const normalizedData = normalizeAffiliateResponse(result);
+        console.log('✅ Affiliate stats fetched successfully:', normalizedData);
+        return normalizedData;
+      }
+    }
+
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`❌ STATS FETCH FAILED`);
+    console.warn(`${'='.repeat(60)}`);
+    console.warn(`Status: ${response.status} ${response.statusText}`);
+    console.warn(`Response:`, result);
+    return null;
+  } catch (error) {
+    console.warn(`${'='.repeat(60)}`);
+    console.error(`❌ STATS FETCH EXCEPTION`);
+    console.warn(`${'='.repeat(60)}`);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Error message: ${errorMsg}`);
+    console.error(`Full error:`, error);
+    return null;
   }
 }
