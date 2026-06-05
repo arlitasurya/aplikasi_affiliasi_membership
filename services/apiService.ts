@@ -55,10 +55,20 @@ const normalizeAffiliateResponse = (data: any): any => {
   return normalized;
 };
 
+
+// FUNGSI HELPER UNTUK MENDAPATKAN HEADER OTENTIKASI
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('jwtToken');
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+};
+
 /**
  * Central Backend API URL - untuk KYC verification (OCR processing)
  * Diambil dari .env file: VITE_CENTRAL_API_URL
- * Default: http://192.168.110.6:4000 (jika tidak ada di .env)
+ * Default: http://172.20.10.5:4000 (jika tidak ada di .env)
  * 
  * Endpoint KYC: {CENTRAL_API_URL}/api/membership/affiliate/verify
  */
@@ -71,8 +81,8 @@ const getCentralApiUrl = () => {
     return centralUrl;
   }
   
-  // Fallback ke IP 192.168.110.6 jika tidak ada .env (per backend team)
-  const fallbackUrl = 'http://192.168.110.6:4000';
+  // Fallback ke IP 172.20.10.5 jika tidak ada .env (per backend team)
+    const fallbackUrl = 'http://172.20.10.5:4000';
   console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
   return fallbackUrl;
 };
@@ -110,10 +120,11 @@ export async function verifyAffiliateKtm(
     console.log('📋 FormData fields: ktm_image, user_id');
     console.log('📝 Backend akan lakukan OCR dan return status (PENDING/APPROVED/REJECTED)');
 
-    const response = await fetch(kycEndpoint, {
-      method: 'POST',
-      body: formData
-    });
+     const response = await fetch(kycEndpoint, {
+       method: 'POST',
+       body: formData,
+       headers: getAuthHeaders()
+     });
 
     console.log(`📥 Response status: ${response.status}`);
     
@@ -148,10 +159,10 @@ export async function verifyAffiliateKtm(
  * - affiliate_tier → affiliateLevel
  * 
  * @param userId - User ID dari affiliate
- * @param token - Auth token (opsional)
  * @returns affiliate network object with downlines, commission, points from affiliate_networks
  */
-export async function getAffiliateNetwork(userId: string, token?: string) {
+
+export async function getAffiliateNetwork(userId: string) {
   try {
     const centralApiUrl = getCentralApiUrl();
     const endpoint = `${centralApiUrl}/api/membership/affiliate/network/${userId}`;
@@ -161,25 +172,19 @@ export async function getAffiliateNetwork(userId: string, token?: string) {
     console.log(`${'='.repeat(60)}`);
     console.log(`🔗 Endpoint: ${endpoint}`);
     console.log(`👤 User ID: ${userId}`);
-    console.log(`🔑 Auth Token: ${token ? 'YES' : 'NO (akan send tanpa auth)'}`);
     
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
     };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-      console.log(`📌 Will send Authorization header: Bearer ${token.substring(0, 20)}...`);
-    }
     
     console.log(`📤 Sending GET request with headers:`, headers);
     
     const response = await fetch(endpoint, {
       method: 'GET',
-      headers,
-      credentials: 'include' // Send cookies if backend uses them
+      headers
     });
-
+    
     console.log(`\n📥 RESPONSE RECEIVED`);
     console.log(`📊 Status: ${response.status} ${response.statusText}`);
     console.log(`📋 Response Headers:`, {
@@ -216,7 +221,7 @@ export async function getAffiliateNetwork(userId: string, token?: string) {
         return normalizedData;
       }
     }
-
+    
     // Handle errors
     console.warn(`${'='.repeat(60)}`);
     console.warn(`❌ NETWORK FETCH FAILED`);
@@ -261,10 +266,10 @@ export async function getAffiliateNetwork(userId: string, token?: string) {
  * - total_points → totalPoints (NOT user.totalPoints from user_points table)
  * 
  * @param userId - User ID dari affiliate
- * @param token - Auth token (opsional)
  * @returns affiliate stats object from affiliate_networks
  */
-export async function getAffiliateStats(userId: string, token?: string) {
+
+export async function getAffiliateStats(userId: string) {
   try {
     const centralApiUrl = getCentralApiUrl();
     const endpoint = `${centralApiUrl}/api/membership/affiliate/stats/${userId}`;
@@ -274,22 +279,17 @@ export async function getAffiliateStats(userId: string, token?: string) {
     console.log(`${'='.repeat(60)}`);
     console.log(`🔗 Endpoint: ${endpoint}`);
     console.log(`👤 User ID: ${userId}`);
-    console.log(`🔑 Auth Token: ${token ? 'YES' : 'NO'}`);
     
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
     };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
     
     const response = await fetch(endpoint, {
       method: 'GET',
-      headers,
-      credentials: 'include'
+      headers
     });
-
+    
     console.log(`\n📥 RESPONSE RECEIVED`);
     console.log(`📊 Status: ${response.status} ${response.statusText}`);
     console.log(`📋 Response Headers:`, {
@@ -321,7 +321,7 @@ export async function getAffiliateStats(userId: string, token?: string) {
         return normalizedData;
       }
     }
-
+    
     console.warn(`${'='.repeat(60)}`);
     console.warn(`❌ STATS FETCH FAILED`);
     console.warn(`${'='.repeat(60)}`);

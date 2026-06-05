@@ -100,26 +100,33 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
 
       const result = await response.json();
 
-      // Backend returns: { success: true, data: { /* user fields */ } }
-      if (result.success && result.data) {
-        const payload = result.data;
-        // Some responses place user fields directly under data, some under data.user
-        const src = payload.user || payload;
-        const user: User = {
-          ...src,
-          id: src.user_id || src.id,
-          name: src.name || src.username || src.full_name || formData.name,
-          nim: src.nim || src.NIM || src.student_id || formData.nim,
-          role: src.role || UserRole.MEMBER,
-          totalPoints: src.total_points || 0,
-          cashbackPoints: src.cashback_points || 0,
-          commissionPoints: src.commission_points || 0,
-          referralCode: payload.referral_code || src.referral_code || ''
-        };
-        onSuccess(user);
-      } else {
-        setError(result.message || "Gagal mendaftar. Silakan coba lagi.");
-      }
+       // Backend returns: { success: true, data: { /* user fields */ } }
+       if (result.success && result.data) {
+         const payload = result.data;
+         // Some responses place user fields directly under data, some under data.user
+         const src = payload.user || payload;
+         const user: User = {
+           ...src,
+           id: src.user_id || src.id,
+           name: src.name || src.username || src.full_name || formData.name,
+           nim: src.nim || src.NIM || src.student_id || formData.nim,
+           role: src.role || UserRole.MEMBER,
+           totalPoints: src.total_points || 0,
+           cashbackPoints: src.cashback_points || 0,
+           commissionPoints: src.commission_points || 0,
+           referralCode: payload.referral_code || src.referral_code || ''
+         };
+         
+         // Simpan token JWT dari respons (jika ada)
+         const token = result.data.token || result.data.accessToken;
+         if (token) {
+           localStorage.setItem('jwtToken', token);
+         }
+         
+         onSuccess(user);
+       } else {
+         setError(result.message || "Gagal mendaftar. Silakan coba lagi.");
+       }
     } catch (err) {
       console.error("Registration failed:", err);
       setError(err instanceof Error ? err.message : "Gagal terhubung ke server. Pastikan backend pusat berjalan.");

@@ -53,34 +53,29 @@ const mapBackendTierToFrontend = (backendTier: string): AffiliateLevel => {
   return tierMap[backendTier] || AffiliateLevel.STARTER;
 };
 
-const calculateAffiliateLevel = (downlines: number): AffiliateLevel => {
-  if (downlines >= 50) return AffiliateLevel.ELITE;
-  if (downlines >= 10) return AffiliateLevel.PRO;
-  return AffiliateLevel.STARTER;
-};
-
-const calculateLevelProgress = (downlines: number): { progress: number; target: number; level: AffiliateLevel } => {
-  const level = calculateAffiliateLevel(downlines);
-  const levelConfig = AFFILIATE_LEVELS[level];
-  
+const calculateLevelInfo = (downlines: number): { level: AffiliateLevel; progress: number; target: number } => {
+  let level: AffiliateLevel;
   let progress = 0;
-  let nextTarget = levelConfig.max + 1;
-  
-  if (level === AffiliateLevel.STARTER) {
-    progress = (downlines / 10) * 100;
-    nextTarget = 10;
-  } else if (level === AffiliateLevel.PRO) {
+  let nextTarget = 10; // default
+
+  if (downlines >= 50) {
+    level = AffiliateLevel.ELITE;
+    progress = 100;
+    nextTarget = downlines;
+  } else if (downlines >= 10) {
+    level = AffiliateLevel.PRO;
     progress = ((downlines - 10) / 40) * 100;
     nextTarget = 50;
   } else {
-    progress = 100;
-    nextTarget = downlines;
+    level = AffiliateLevel.STARTER;
+    progress = (downlines / 10) * 100;
+    nextTarget = 10;
   }
-  
+
   return {
+    level,
     progress: Math.min(100, Math.max(0, progress)),
-    target: nextTarget,
-    level
+    target: nextTarget
   };
 };
 
@@ -106,59 +101,43 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, onBack })
     }
   });
 
-  useEffect(() => {
+useEffect(() => {
     const fetchAffiliateData = async () => {
       try {
         setLoading(true);
-        
-        /**
-         * Fetch affiliate data from affiliate_networks table
-         * Source backend: affiliate_networks (NOT user_points)
-         * Fields mapping:
-         * - backend.total_referrals → frontend.totalDownlines
-         * - backend.commission_points → frontend.totalCommission
-         * - backend.total_points → frontend.totalPoints
-         * - backend.affiliate_tier → frontend.affiliateLevel
-         */
         const networkData = await getAffiliateNetwork(user.id);
-        const statsData = await getAffiliateStats(user.id);
         
-        if (networkData || statsData) {
-          // Use networkData as primary source (has more fields)
-          const data = networkData || statsData;
+        // 🕵️‍♀️ MATA-MATA 1: Mengintip apa yang sebenarnya dikirim oleh apiService
+        console.log("🕵️‍♀️ [MATA-MATA 1] RAW DATA DARI API SERVICE:", networkData);
+
+        if (networkData) {
+          // JURUS ANTI BUNGKUSAN: Kalau datanya tersembunyi di dalam property 'data' (efek Axios/Fetch)
+          const data = networkData.data || networkData.network || networkData;
           
-          const downlines = data?.totalDownlines || 0;
-          const commission = data?.totalCommission || 0;
-          const points = data?.totalPoints || 0;
+          // 📦 MATA-MATA 2: Memastikan bungkusan sudah terbuka
+          console.log("📦 [MATA-MATA 2] DATA SIAP BACA:", data);
           
-          const levelInfo = calculateLevelProgress(downlines);
+          // Mapping diperluas untuk menangkap semua kemungkinan nama dari database
+          const downlines = data?.totalDownlines ?? data?.total_downlines ?? data?.total_referrals ?? 0;
+          const commission = data?.totalCommission ?? data?.commission_points ?? 0;
+          const points = data?.totalPoints ?? data?.total_points ?? 0;
+          let affiliateLevelFromData = data?.affiliateLevel ?? data?.affiliate_tier ?? 'Starter';
           
+          const { level, progress, target } = calculateLevelInfo(downlines);
+          const mappedLevel = mapBackendTierToFrontend(affiliateLevelFromData);
+
           setAffiliateData({
             totalDownlines: downlines,
             totalCommission: commission,
             totalPoints: points,
-            affiliateLevel: levelInfo.level,
-            levelProgress: levelInfo.progress,
-            nextLevelTarget: levelInfo.target,
+            affiliateLevel: mappedLevel,
+            levelProgress: progress,
+            nextLevelTarget: target,
             commissionBreakdown: {
               poinKomisi: commission,
               poinCashback: points - commission
             }
           });
-          
-          console.log('✅ Affiliate data synced from affiliate_networks table:', {
-            downlines,
-            commission,
-            points,
-            level: levelInfo.level
-          });
-        } else {
-          /**
-           * Fallback: If backend fails, show empty data
-           * Do NOT fallback to user object properties
-           * because user.totalPoints is from user_points table, not affiliate_networks
-           */
-          console.log('ℹ️ Backend affiliate_networks endpoint not responsive, showing empty affiliate data');
         }
       } catch (error) {
         console.error('Error fetching affiliate data:', error);
@@ -202,7 +181,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, onBack })
           <ArrowLeft size={24} className="text-orange-700" />
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-orange-900">Dashboard Afiliasi</h1>
+          <h1 className="text-3xl font-bold text-orange-900">Dashboard Afiliasi testing yang baru</h1>
           <p className="text-orange-700">Pantau pertumbuhan jaringan dan komisi Anda.</p>
         </div>
       </div>

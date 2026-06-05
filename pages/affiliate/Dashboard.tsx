@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, UserRole, Transaction, MemberLevel } from '../../types';
 import Card from '../../components/Card';
 import { PlayGameCard, MenuRecommendationCard } from '../DashboardCommon';
 import { MOCK_MENU } from '../../constants';
 import { analyzeAffiliateGrowth, analyzeBusinessInsight } from '../../services/geminiService';
+import { getAffiliateNetwork } from '../../services/apiService';
 import { 
   Share2, 
   Copy, 
@@ -33,11 +33,11 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   const [copied, setCopied] = useState(false);
   const [aiStrategy, setAiStrategy] = useState<string>("Menganalisis performa jaringan Anda...");
   const [businessInsight, setBusinessInsight] = useState<string>("Menganalisis data jaringan Anda...");
+  const [networkStats, setNetworkStats] = useState({ downlines: 0, commission: 0, cashback: 0, level: '' });
 
   useEffect(() => {
     let isMounted = true;
     const fetchAI = async () => {
-      // Caching logic to prevent rate limiting
       const cacheKey = `ai_insight_${user.id}`;
       const cachedData = sessionStorage.getItem(cacheKey);
 
@@ -46,8 +46,8 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
         if (isMounted) {
           setAiStrategy(strategy);
           setBusinessInsight(insight);
-          return;
         }
+        return;
       }
 
       try {
@@ -57,7 +57,6 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
         if (isMounted) {
           setAiStrategy(strategy);
           setBusinessInsight(insight);
-          // Save to cache
           sessionStorage.setItem(cacheKey, JSON.stringify({ strategy, insight }));
         }
       } catch (err) {
@@ -65,8 +64,26 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
       }
     };
 
+    const fetchNetworkStats = async () => {
+      try {
+        const data = await getAffiliateNetwork(user.id);
+        if (isMounted && data) {
+          console.log("DATA BACKEND:", data);
+          const downlines = data.totalDownlines ?? data.total_referrals ?? data.total_downlines ?? 0;
+          const commission = data.totalCommission ?? data.commission_points ?? 0;
+          const cashback = data.cashback ?? data.cashback_points ?? 0;
+          const level = data.affiliateLevel ?? data.affiliate_tier ?? '';
+          
+          setNetworkStats({ downlines, commission, cashback, level });
+        }
+      } catch (err) {
+        console.error("Affiliate Network Stats Error:", err);
+      }
+    };
+
     if (user.id) {
       fetchAI();
+      fetchNetworkStats();
     }
 
     return () => { isMounted = false; };
@@ -89,7 +106,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   };
 
   // LOGIKA LEVEL DINAMIS NGOLAB HUB (Starter/Pro/Elite)
-  const totalDownlines = user.totalDownlines || 0;
+  const totalDownlines = networkStats.downlines || user.totalDownlines || 0;
   
   const levels = [
     { id: 'Starter', name: 'Starter', minMembers: 0, commission: '2%' },
@@ -98,7 +115,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   ];
 
   // Tentukan Level Saat Ini berdasarkan data dari Database
-  const currentAffLevel = user.affiliateLevel || 'Starter';
+  const currentAffLevel = networkStats.level || user.affiliateLevel || 'Starter';
   const currentLevelIdx = levels.findIndex(l => l.id === currentAffLevel);
   const currentLevel = levels[currentLevelIdx] || levels[0];
   const nextLevel = currentLevelIdx < levels.length - 1 ? levels[currentLevelIdx + 1] : null;
@@ -228,7 +245,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
                         <Users size={14} className="text-orange-200" />
                         <span className="text-[10px] font-bold text-orange-100/80 uppercase">Total Referral</span>
                       </div>
-                      <span className="font-black text-sm">{user.totalDownlines || 0} Member</span>
+                      <span className="font-black text-sm">{totalDownlines} Member</span>
                     </div>
                     
                     <div className="flex items-center justify-between">
@@ -236,7 +253,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
                         <Star size={14} className="text-orange-200" />
                         <span className="text-[10px] font-bold text-orange-100/80 uppercase">Poin Komisi</span>
                       </div>
-                      <span className="font-black text-sm">{(user.commissionPoints || 0).toLocaleString()} PTS</span>
+                      <span className="font-black text-sm">{(networkStats.commission || user.commissionPoints || 0).toLocaleString()} PTS</span>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -244,7 +261,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
                         <Wallet size={14} className="text-orange-200" />
                         <span className="text-[10px] font-bold text-orange-100/80 uppercase">Poin Cashback</span>
                       </div>
-                      <span className="font-black text-sm">{(user.cashbackPoints || 0).toLocaleString()} PTS</span>
+                      <span className="font-black text-sm">{(networkStats.cashback || user.cashbackPoints || 0).toLocaleString()} PTS</span>
                     </div>
                   </div>
                 </div>

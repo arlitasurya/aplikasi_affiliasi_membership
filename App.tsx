@@ -44,32 +44,36 @@ const App: React.FC = () => {
     return () => window.removeEventListener('changeTab', handleTabChange);
   }, []);
 
-  useEffect(() => {
-    let interval: any;
-      if (user && user.role !== UserRole.ADMIN) {
-      interval = setInterval(async () => {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
-            method: 'GET'
-          });
-          const result = await response.json();
-          if (result.success && result.data) {
-            const latest = result.data.user || result.data;
-            if (JSON.stringify(latest) !== JSON.stringify(user)) {
-              // normalize id field
-              const normalized = { ...latest, id: latest.user_id || latest.id };
-              setUser(normalized as any);
-            }
-          }
-        } catch (e) {
-          console.error('Sync failed:', e);
-        }
-      }, 8000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [user]);
+   useEffect(() => {
+     let interval: any;
+       if (user && user.role !== UserRole.ADMIN) {
+       interval = setInterval(async () => {
+         try {
+           const response = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
+             method: 'GET'
+           });
+           const result = await response.json();
+           if (result.success && result.data) {
+             const latest = result.data.user || result.data;
+             // Preserve referralCode from current user if not present in latest
+             if (latest.referralCode == null && user?.referralCode != null) {
+               latest.referralCode = user.referralCode;
+             }
+             if (JSON.stringify(latest) !== JSON.stringify(user)) {
+               // normalize id field
+               const normalized = { ...latest, id: latest.user_id || latest.id };
+               setUser(normalized as any);
+             }
+           }
+         } catch (e) {
+           console.error('Sync failed:', e);
+         }
+       }, 8000);
+     }
+     return () => {
+       if (interval) clearInterval(interval);
+     };
+   }, [user]);
 
   useEffect(() => {
     if (user && user.role !== UserRole.ADMIN) {
@@ -129,13 +133,14 @@ const App: React.FC = () => {
     setActiveTab('dashboard');
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    setSelectedRole(null);
-    setIsRegistering(false);
-    setIsLoggingIn(false);
-    setActiveTab('dashboard');
-  };
+   const handleLogout = () => {
+     localStorage.removeItem('jwtToken');
+     setUser(null);
+     setSelectedRole(null);
+     setIsRegistering(false);
+     setIsLoggingIn(false);
+     setActiveTab('dashboard');
+   };
 
   const handleUpgradeAffiliateSuccess = (upgradedUser: User) => {
     console.log('✨ User upgrade successful, new role:', upgradedUser.role);

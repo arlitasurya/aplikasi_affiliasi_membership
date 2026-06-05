@@ -44,22 +44,29 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
 
       const result = await response.json();
 
-      // Backend returns: { success: true, data: { user: {...}, affiliate_network, points } }
-      if (result.success && result.data && result.data.user) {
-        const src = result.data.user;
-        const user: User = {
-          ...src,
-          id: src.user_id || src.id,
-          role: src.role || UserRole.MEMBER,
-          totalPoints: result.data.points?.total_points || src.total_points || 0,
-          cashbackPoints: result.data.points?.cashback_points || src.cashback_points || 0,
-          commissionPoints: result.data.points?.commission_points || src.commission_points || 0,
-          referralCode: result.data.affiliate_network?.referral_code || src.referral_code || ''
-        };
-        onSuccess(user);
-      } else {
-        setError(result.message || "Email tidak terdaftar atau password salah.");
-      }
+       // Backend returns: { success: true, data: { user: {...}, affiliate_network, points } }
+       if (result.success && result.data && result.data.user) {
+         const src = result.data.user;
+         const user: User = {
+           ...src,
+           id: src.user_id || src.id,
+           role: src.role || UserRole.MEMBER,
+           totalPoints: result.data.points?.total_points || src.total_points || 0,
+           cashbackPoints: result.data.points?.cashback_points || src.cashback_points || 0,
+           commissionPoints: result.data.points?.commission_points || src.commission_points || 0,
+           referralCode: result.data.affiliate_network?.referral_code || src.referral_code || ''
+         };
+         
+         // Simpan token JWT dari respons (jika ada)
+         const token = result.data.token || result.data.accessToken;
+         if (token) {
+           localStorage.setItem('jwtToken', token);
+         }
+         
+         onSuccess(user);
+       } else {
+         setError(result.message || "Email tidak terdaftar atau password salah.");
+       }
     } catch (err) {
       console.error("Login failed:", err);
       setError(err instanceof Error ? err.message : "Gagal terhubung ke server. Pastikan backend pusat berjalan.");
