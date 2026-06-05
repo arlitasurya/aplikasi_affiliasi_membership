@@ -1,5 +1,4 @@
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User, UserRole, MemberLevel } from '../types';
 import { 
   Key, 
@@ -23,21 +22,26 @@ import { API_BASE_URL } from '../constants';
 
 interface ProfileProps {
   user: User;
+  transactions?: any[];
   onUpdateUser?: (updatedUser: User) => void;
 }
 
 type ProfileView = 'MAIN' | 'PASSWORD' | 'SUPPORT' | 'FAQ' | 'EDIT';
 
-const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
+const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) => {
   const [view, setView] = useState<ProfileView>('MAIN');
   const [isCopied, setIsCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState({
-    name: user.name,
-    phone: user.phone || '',
+    name: user.username || user.name,
+    phone: user.phone_number || user.phone || '',
     nim: user.nim || '',
     photoURL: user.photoURL
   });
+
+  // Display name - prioritize username, fallback to name
+  const displayName = user.username || user.name;
+  const initials = displayName ? displayName.substring(0, 2).toUpperCase() : 'UN';
 
   const handleCopyCode = () => {
     if (user.referralCode) {
@@ -58,7 +62,6 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
   const formatDate = (dateStr: string) => {
     if (!dateStr) return 'N/A';
     const date = new Date(dateStr);
-    // Jika masih Invalid Date, coba bersihkan koma jika ada (format toLocaleString lama)
     if (isNaN(date.getTime())) {
       const cleaned = dateStr.replace(',', '');
       const dateFallback = new Date(cleaned);
@@ -73,11 +76,11 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
     if (onUpdateUser) {
       onUpdateUser({
         ...user,
-        name: editForm.name,
-        phone: editForm.phone,
+        username: editForm.name, 
+        phone_number: editForm.phone,
         nim: editForm.nim,
         photoURL: editForm.photoURL
-      });
+      } as any);
     }
     setView('MAIN');
   };
@@ -85,7 +88,6 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Cek apakah password baru dan konfirmasi sama
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       alert("Konfirmasi password baru tidak cocok.");
       return;
@@ -189,8 +191,8 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
     </div>
   );
 
-  const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${user.name}&background=f97316&color=fff&size=128`;
-  const editAvatarUrl = editForm.photoURL || `https://ui-avatars.com/api/?name=${editForm.name}&background=f97316&color=fff&size=128`;
+  const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=f97316&color=fff&size=128`;
+  const editAvatarUrl = editForm.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(editForm.name)}&background=f97316&color=fff&size=128`;
 
   if (view === 'EDIT') {
     return (
@@ -236,14 +238,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
 
           <form onSubmit={handleSave} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NAMA LENGKAP</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NAMA LENGKAP / USERNAME</label>
               <div className="relative">
                 <UserIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                 <input 
                   className="w-full pl-14 pr-6 py-4 rounded-2xl border border-slate-100 bg-slate-50 focus:ring-4 focus:ring-orange-50 focus:border-orange-600 focus:bg-white outline-none transition-all font-bold text-slate-900"
                   value={editForm.name}
                   onChange={e => setEditForm({...editForm, name: e.target.value})}
-                  placeholder="Nama Lengkap"
+                  placeholder="Nama Lengkap / Username"
                 />
               </div>
             </div>
@@ -387,7 +389,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
             <div className="w-32 h-32 rounded-[2.5rem] bg-orange-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
               <img 
                 src={avatarUrl} 
-                alt={user.name}
+                alt={displayName}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -395,7 +397,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
 
           <div className="text-center md:text-left flex-1">
             <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{user.name}</h1>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{displayName}</h1>
               {user.role === UserRole.MEMBER_AFFILIATE && (
                 <span className="w-fit px-3 py-1 bg-orange-100/50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-orange-100">
                   MEMBER AFFILIATE • ACTIVE
@@ -409,14 +411,14 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={16} className="text-slate-300" />
-                {user.phone || 'Belum ada nomor telepon'}
+                {user.phone_number || user.phone || 'Belum ada nomor telepon'}
               </div>
             </div>
           </div>
 
           <button 
             onClick={() => {
-              setEditForm({ name: user.name, phone: user.phone || '', photoURL: user.photoURL });
+              setEditForm({ name: user.username || user.name, phone: user.phone_number || user.phone || '', photoURL: user.photoURL });
               setView('EDIT');
             }}
             className="px-8 py-3.5 bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-orange-100 hover:bg-orange-700 hover:-translate-y-0.5 transition-all"
@@ -471,8 +473,8 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdateUser }) => {
 
               <div>
                 <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2">UPLINE PERMANEN</p>
-                <p className={`text-2xl font-black ${user.referredBy && user.referredBy !== '-' ? 'text-slate-900' : 'text-orange-400'}`}>
-                  {user.referredBy && user.referredBy !== '-' ? user.referredBy : 'None'}
+                <p className={`text-2xl font-black ${(user.referredBy || user.referred_by) ? 'text-slate-900' : 'text-slate-400'}`}>
+                  {user.referredBy || user.referred_by || '-'}
                 </p>
               </div>
 

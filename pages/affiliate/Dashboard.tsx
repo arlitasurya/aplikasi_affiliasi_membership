@@ -109,9 +109,13 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   const totalDownlines = networkStats.downlines || user.totalDownlines || 0;
   
   const levels = [
-    { id: 'Starter', name: 'Starter', minMembers: 0, commission: '2%' },
-    { id: 'Pro', name: 'Pro', minMembers: 10, commission: '5%' },
-    { id: 'Elite', name: 'Elite', minMembers: 30, commission: '10%' },
+    // Level dasar untuk 0-9 member (belum memenuhi syarat minimal komisi)
+    { id: 'Basic', name: 'Basic', minMembers: 0, commission: '0%' }, 
+    
+    // Aturan baru sesuai sistem Ngolab Express
+    { id: 'Starter', name: 'Starter', minMembers: 10, commission: '2%' },
+    { id: 'Pro', name: 'Pro', minMembers: 20, commission: '5%' },
+    { id: 'Elite', name: 'Elite', minMembers: 30, commission: '8%' },
   ];
 
   // Tentukan Level Saat Ini berdasarkan data dari Database
@@ -168,8 +172,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   }
 
   // LOGIKA SALDO POIN GABUNGAN
-  const overallPoints = (user.totalPoints || 0) + (user.cashbackPoints || 0) + (user.commissionPoints || 0);
-
+  const overallPoints = (user.totalPoints || 0) + (networkStats.cashback || user.cashbackPoints || 0) + (networkStats.commission || user.commissionPoints || 0);
   // Fallback mock history if no logs from backend yet
   const pointHistory = user.pointLogs && user.pointLogs.length > 0 
     ? user.pointLogs 

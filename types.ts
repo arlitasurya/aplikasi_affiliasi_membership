@@ -1,4 +1,3 @@
-
 export enum UserRole {
   MEMBER = 'MEMBER',
   MEMBER_AFFILIATE = 'MEMBER_AFFILIATE',
@@ -20,14 +19,18 @@ export enum AffiliateLevel {
 export interface User {
   id: string; // UserID
   name: string; // Nama_Lengkap
+  username?: string; // Username
   email: string; // Email
   password?: string; // Password
   role: UserRole; // Role
   status: 'ACTIVE' | 'PENDING' | 'BANNED' | 'REJECTED' | 'VERIFIED'; // Account_Status mappings
-  referredBy?: string; // Referred_By (ID Upline Permanen)
+  referredBy?: string; // Referred_By (ID Upline Permanen) - camelCase
+  referred_by?: string; // Referred_By (ID Upline Permanen) - snake_case backend
   joinDate: string; // Created_At
-  phone?: string; // Nomor_Telepon
+  phone?: string; // Nomor_Telepon - camelCase
+  phone_number?: string; // Nomor_Telepon - snake_case backend
   photoURL?: string; // Foto_Profil
+  profile_picture?: string; // Foto_Profil - snake_case backend
   
   // AI Insight & Validation
   ktm_url?: string;
