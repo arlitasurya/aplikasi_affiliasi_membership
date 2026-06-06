@@ -44,36 +44,41 @@ const App: React.FC = () => {
     return () => window.removeEventListener('changeTab', handleTabChange);
   }, []);
 
-   useEffect(() => {
-     let interval: any;
-       if (user && user.role !== UserRole.ADMIN) {
-       interval = setInterval(async () => {
-         try {
-           const response = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
-             method: 'GET'
-           });
-           const result = await response.json();
-           if (result.success && result.data) {
-             const latest = result.data.user || result.data;
-             // Preserve referralCode from current user if not present in latest
-             if (latest.referralCode == null && user?.referralCode != null) {
-               latest.referralCode = user.referralCode;
-             }
-             if (JSON.stringify(latest) !== JSON.stringify(user)) {
-               // normalize id field
-               const normalized = { ...latest, id: latest.user_id || latest.id };
-               setUser(normalized as any);
-             }
-           }
-         } catch (e) {
-           console.error('Sync failed:', e);
-         }
-       }, 8000);
-     }
-     return () => {
-       if (interval) clearInterval(interval);
-     };
-   }, [user]);
+   const CONNECTION_KEY = 'kw7ZPgN5A8Y7';
+
+    useEffect(() => {
+      let interval: any;
+        if (user && user.role !== UserRole.ADMIN) {
+        interval = setInterval(async () => {
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
+              method: 'GET',
+              headers: {
+                'X-Connection-Key': CONNECTION_KEY
+              }
+            });
+            const result = await response.json();
+            if (result.success && result.data) {
+              const latest = result.data.user || result.data;
+              // Preserve referralCode from current user if not present in latest
+              if (latest.referralCode == null && user?.referralCode != null) {
+                latest.referralCode = user.referralCode;
+              }
+              if (JSON.stringify(latest) !== JSON.stringify(user)) {
+                // normalize id field
+                const normalized = { ...latest, id: latest.user_id || latest.id };
+                setUser(normalized as any);
+              }
+            }
+          } catch (e) {
+            console.error('Sync failed:', e);
+          }
+        }, 8000);
+      }
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [user]);
 
   useEffect(() => {
     if (user && user.role !== UserRole.ADMIN) {
@@ -153,18 +158,27 @@ const App: React.FC = () => {
   const handleUpdateUser = async (updatedUser: User) => {
     setIsLoadingUpdate(true);
     try {
-      // Prepare payload dengan hanya field yang backend support
-      const updatePayload = {
-        name: updatedUser.name,
-        phone: updatedUser.phone,
-        photoURL: updatedUser.photoURL,
-        nim: updatedUser.nim  // Try to include NIM in the payload
-      };
+      const formData = new FormData();
+      formData.append('username', updatedUser.username || updatedUser.name || '');
+      formData.append('phone_number', updatedUser.phone_number || updatedUser.phone || '');
+      formData.append('nim', updatedUser.nim || '');
+
+      if (updatedUser.photoURL) {
+        const photoField = updatedUser.photoURL;
+        if (photoField instanceof File) {
+          formData.append('profile_picture', photoField);
+        } else if (typeof photoField === 'string' && photoField.startsWith('data:')) {
+          const response = await fetch(photoField);
+          const blob = await response.blob();
+          const file = new File([blob], 'profile.jpg', { type: blob.type || 'image/jpeg' });
+          formData.append('profile_picture', file);
+        }
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/membership/profile/${updatedUser.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatePayload),
+        body: formData,
+        headers: { 'X-Connection-Key': CONNECTION_KEY },
       });
       const result = await response.json();
       if (result.success) {
@@ -198,13 +212,18 @@ const App: React.FC = () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/membership/redeem-points`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Connection-Key': CONNECTION_KEY 
+          },
           body: JSON.stringify({ user_id: user.id, voucher_code: voucher.code, points_to_redeem: voucher.pointCost }),
         });
         const result = await response.json();
         if (result.success) {
           // optionally refresh profile
-          const ref = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`);
+          const ref = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
+            headers: { 'X-Connection-Key': CONNECTION_KEY }
+          });
           const refRes = await ref.json().catch(() => ({}));
           if (refRes.success && refRes.data) {
             const latest = refRes.data.user || refRes.data;

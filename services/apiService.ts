@@ -57,18 +57,22 @@ const normalizeAffiliateResponse = (data: any): any => {
 
 
 // FUNGSI HELPER UNTUK MENDAPATKAN HEADER OTENTIKASI
-const getAuthHeaders = () => {
+const getAuthHeaders = (skipConnectionKey = false) => {
   const token = localStorage.getItem('jwtToken');
+  const headers: Record<string, string> = {};
   if (token) {
-    return { Authorization: `Bearer ${token}` };
+    headers['Authorization'] = `Bearer ${token}`;
   }
-  return {};
+  if (!skipConnectionKey) {
+    headers['X-Connection-Key'] = 'kw7ZPgN5A8Y7';
+  }
+  return headers;
 };
 
 /**
  * Central Backend API URL - untuk KYC verification (OCR processing)
  * Diambil dari .env file: VITE_CENTRAL_API_URL
- * Default: http://172.20.10.5:4000 (jika tidak ada di .env)
+ * Default: http://localhost:4000 (jika tidak ada di .env)
  * 
  * Endpoint KYC: {CENTRAL_API_URL}/api/membership/affiliate/verify
  */
@@ -81,9 +85,9 @@ const getCentralApiUrl = () => {
     return centralUrl;
   }
   
-  // Fallback ke IP 172.20.10.5 jika tidak ada .env (per backend team)
-    const fallbackUrl = 'http://172.20.10.5:4000';
-  console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
+// Fallback ke IP 10.128.26.247 jika tidak ada .env (per backend team)
+   const fallbackUrl = 'http://10.128.26.247:4000';
+   console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
   return fallbackUrl;
 };
 
