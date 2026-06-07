@@ -5,6 +5,7 @@ import Card from '../../components/Card';
 import { PlayGameCard, MenuRecommendationCard } from '../DashboardCommon';
 import { MOCK_MENU } from '../../constants';
 import { analyzeHistoryForRewards } from '../../services/geminiService';
+import QRCode from 'react-qr-code';
 import { QrCode, TrendingUp, Sparkles, Gift, Crown, Star, Gamepad2, History, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 
 interface MemberDashboardProps {
@@ -111,8 +112,14 @@ const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, transactions })
               </div>
               <div className="md:col-span-2 bg-gradient-to-br from-orange-600 to-amber-700 p-6 flex items-center justify-center relative overflow-hidden">
                 <div className="bg-white p-3 rounded-3xl shadow-2xl relative z-10">
-                  <QrCode size={120} className="text-slate-900" />
-                  <p className="text-center text-[9px] font-bold text-orange-600 mt-2 uppercase tracking-tighter">ID: {(user.id || 'N/A').toUpperCase()}</p>
+                  {user?.id ? (
+                    <QRCode value={String(user.id)} size={120} />
+                  ) : (
+                    <div style={{ width: 120, height: 120, backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, fontSize: 12, color: '#9ca3af' }}>
+                      Memuat QR...
+                    </div>
+                  )}
+                  <p className="text-center text-[9px] font-bold text-orange-600 mt-2 uppercase tracking-tighter">ID: {String(user?.id || 'N/A').toUpperCase()}</p>
                 </div>
                 <Sparkles className="absolute -right-6 -top-6 text-white/10 w-32 h-32" />
               </div>

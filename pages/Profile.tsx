@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import QRCode from "react-qr-code";
 import { User, UserRole, MemberLevel } from '../types';
 import { 
   Key, 
@@ -19,6 +20,8 @@ import {
   FileText
 } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
+
+
 
 interface ProfileProps {
   user: User;
@@ -435,20 +438,26 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
             </div>
 
             <div className="space-y-8">
-              <div>
+<div>
                 <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2">
                   QR Code Member
                 </p>
                 <div className="flex items-center gap-6">
                   <div className="p-3 bg-white border-4 border-slate-50 rounded-2xl shadow-sm">
-                    <QrCode size={80} className="text-slate-900" />
+ {user?.id ? (
+  <QRCode value={String(user.id)} size={120} />
+) : (
+  <div style={{ width: 120, height: 120, backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, fontSize: 12, color: '#9ca3af' }}>
+    Memuat QR...
+  </div>
+)}
                   </div>
                   <div>
                     <p className="text-2xl font-black text-slate-900 uppercase">
-                      {user.id}
+                      {String(user?.id || 'N/A')}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID UNIK MEMBER NGOLABHUB</p>
-                  </div>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID UNIK MEMBER NGOLABHUB</p>
+                   </div>
                 </div>
               </div>
 

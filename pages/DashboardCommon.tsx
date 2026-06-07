@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Gamepad2, Info } from 'lucide-react';
 import { GAMIFICATION_LINK } from '../constants';
