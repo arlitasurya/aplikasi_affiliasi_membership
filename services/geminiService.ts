@@ -1,5 +1,6 @@
 import Tesseract from 'tesseract.js';
 import { Transaction, User, UserRole } from "../types";
+import { API_BASE_URL } from "../constants";
 
 /**
  * Ngolab OCR Service
@@ -86,23 +87,6 @@ export const scanKTM = async (base64Image: string) => {
 };
 
 /**
- * Main prediction function based on User Role (STUB).
- * Member: Returns static menu recommendation.
- * Affiliate: Returns static business strategy.
- */
-export const getGeminiPrediction = async (user: User, _transactions: Transaction[]): Promise<string> => {
-  // Simulate network delay for realistic UI feeling
-  await new Promise(resolve => setTimeout(resolve, 800));
-
-  if (user.role === UserRole.MEMBER_AFFILIATE) {
-    return "Strategi Jaringan: Manfaatkan event kampus minggu ini untuk membagikan kode referral secara masif ke teman-teman seangkatan agar komisi Anda meningkat tajam!";
-  } else {
-    // Default for MEMBER and others
-    return "Melihat riwayatmu, Mie Ayam Yamin pedas paling pas buat nemenin nugas sore ini! Cek promo di bawah.";
-  }
-};
-
-/**
  * Verifikasi KTM Mockup (STUB).
  */
 export const verifyKTMWithGemini = async (_base64Image: string) => {
@@ -110,18 +94,113 @@ export const verifyKTMWithGemini = async (_base64Image: string) => {
 };
 
 /**
- * Compatibility functions for existing components.
+ * Fetch AI Recommendation from backend endpoint.
+ * Backend endpoint: GET /api/kiosk/ai-insights/{user_id}
+ * Returns null if not found (user has no transaction history yet).
  */
-export const analyzeHistoryForRewards = async (transactions: Transaction[]) => {
-  return "Melihat riwayatmu, Mie Ayam Yamin pedas paling pas buat nemenin nugas sore ini!";
+export const getRecommendation = async (userId: string): Promise<{
+  favorite_category: string;
+  peak_visit_time: string;
+  ai_recommendation: string;
+} | null> => {
+  try {
+    // Hardcoded URL to ensure correct endpoint
+    const centralUrl = 'http://10.20.112.136:4000';
+    const response = await fetch(`${centralUrl}/api/kiosk/ai-insights/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('📊 Data yang diterima dari backend:', result);
+    if (response.ok && result?.data) {
+      const recommendation = result.data.ai_recommendation || result.data.data?.ai_recommendation || '';
+      console.log('✅ Extracted ai_recommendation:', recommendation);
+      return {
+        favorite_category: result.data.favorite_category || '',
+        peak_visit_time: result.data.peak_visit_time || '',
+        ai_recommendation: recommendation
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('getRecommendation error:', error);
+    return null;
+  }
 };
 
-export const analyzeBusinessInsight = async (user: User, transactions: Transaction[]) => {
-  return getGeminiPrediction(user, transactions);
+/**
+ * Analyze affiliate growth - fetch AI insight from backend /api/kiosk/ai-insights/{user_id}
+ * Returns ai_recommendation from backend or fallback to default text.
+ */
+export const analyzeAffiliateGrowth = async (user: User): Promise<string> => {
+  try {
+    // Hardcoded URL to ensure correct endpoint
+    const centralUrl = 'http://10.20.112.136:4000';
+    console.log(`🔍 Fetching AI insights from: ${centralUrl}/api/kiosk/ai-insights/${user.id}`);
+    const response = await fetch(`${centralUrl}/api/kiosk/ai-insights/${user.id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log('📊 Data AI insights di analyzeAffiliateGrowth:', result);
+      // Handle both direct data and nested data structures
+      const recommendation = result?.data?.ai_recommendation || result?.data?.data?.ai_recommendation || result?.ai_recommendation || '';
+      if (recommendation) {
+        console.log('✅ Recommendation found:', recommendation);
+        return recommendation;
+      }
+    } else {
+      console.warn(`⚠️ AI insights fetch failed: ${response.status} ${response.statusText}`);
+    }
+  } catch (error) {
+    console.error('analyzeAffiliateGrowth fetch error:', error);
+  }
+
+// Fallback to default text
+   return "Menunggu data analitik AI...";
 };
 
-export const analyzeAffiliateGrowth = async (user: User) => {
-  return getGeminiPrediction(user, []);
+/**
+ * Analyze business insight - fetch from backend or use fallback
+ */
+export const analyzeBusinessInsight = async (user: User, transactions: Transaction[]): Promise<string> => {
+  if (user.role === UserRole.MEMBER_AFFILIATE) {
+    return analyzeAffiliateGrowth(user);
+  } else {
+    // For regular members, try to fetch recommendation
+    const rec = await getRecommendation(user.id);
+    if (rec?.ai_recommendation) {
+      return rec.ai_recommendation;
+    }
+    return "Menunggu data analitik AI...";
+  }
+};
+
+/**
+ * Analyze history for rewards - now fetches from backend
+ */
+export const analyzeHistoryForRewards = async (transactions: Transaction[], userId?: string): Promise<string> => {
+  if (userId) {
+    const rec = await getRecommendation(userId);
+    if (rec?.ai_recommendation) {
+      return rec.ai_recommendation;
+    }
+  }
+  return "Menunggu data analitik AI...";
 };
 
 

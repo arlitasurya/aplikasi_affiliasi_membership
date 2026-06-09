@@ -31,9 +31,33 @@ interface AffiliateDashboardProps {
 
 const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transactions }) => {
   const [copied, setCopied] = useState(false);
-  const [aiStrategy, setAiStrategy] = useState<string>("Menganalisis performa jaringan Anda...");
-  const [businessInsight, setBusinessInsight] = useState<string>("Menganalisis data jaringan Anda...");
+  const [aiStrategy, setAiStrategy] = useState<string>("Menunggu data analitik AI...");
+  const [businessInsight, setBusinessInsight] = useState<string>("Menunggu data analitik AI...");
   const [networkStats, setNetworkStats] = useState({ downlines: 0, commission: 0, cashback: 0, level: '' });
+  const [aiInsights, setAiInsights] = useState<{ ai_recommendation?: string; favorite_category?: string; peak_visit_time?: string } | null>(null);
+
+  // Fetch AI insights from backend endpoint
+  useEffect(() => {
+    const fetchAiInsights = async () => {
+      try {
+        const response = await fetch(`http://10.20.112.136:4000/api/kiosk/ai-insights/${user.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          const aiData = result?.data || result;
+          if (aiData?.ai_recommendation) {
+            setAiInsights(aiData);
+            setBusinessInsight(aiData.ai_recommendation);
+          }
+        } else if (response.status === 404) {
+          setAiInsights({ ai_recommendation: 'Data belum tersedia' });
+          setBusinessInsight('Data belum tersedia');
+        }
+      } catch (error) {
+        // Silent fail - no error in console
+      }
+    };
+    fetchAiInsights();
+  }, [user.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -374,9 +398,9 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
                 <span className="text-sm">Analisis Performa Referral</span>
               </div>
               <div className="space-y-3">
-                <p className="text-slate-200 text-sm leading-relaxed font-medium italic">
-                  "{businessInsight}"
-                </p>
+<p className="text-slate-200 text-sm leading-relaxed font-medium italic">
+                   "{aiInsights?.ai_recommendation || businessInsight}"
+                 </p>
                 <div className="p-3 bg-white/5 rounded-xl border border-white/10">
                   <p className="text-orange-400 text-[9px] font-black uppercase tracking-widest mb-1">Strategi Rekomendasi</p>
                   <p className="text-slate-300 text-xs">{aiStrategy}</p>

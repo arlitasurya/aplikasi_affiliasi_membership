@@ -85,9 +85,9 @@ const getCentralApiUrl = () => {
     return centralUrl;
   }
   
-// Fallback ke IP 192.168.0.37 jika tidak ada .env (per backend team)
-   const fallbackUrl = 'http://192.168.0.37:4000';
-   console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
+// Fallback ke IP 10.20.112.136 jika tidak ada .env (per backend team)
+    const fallbackUrl = 'http://10.20.112.136:4000';
+    console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
   return fallbackUrl;
 };
 

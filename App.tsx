@@ -46,38 +46,9 @@ const App: React.FC = () => {
 
    const CONNECTION_KEY = 'kw7ZPgN5A8Y7';
 
-    useEffect(() => {
-      let interval: any;
-        if (user && user.role !== UserRole.ADMIN) {
-        interval = setInterval(async () => {
-          try {
-            const response = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
-              method: 'GET',
-              headers: {
-                'X-Connection-Key': CONNECTION_KEY
-              }
-            });
-            const result = await response.json();
-            if (result.success && result.data) {
-              const latest = result.data.user || result.data;
-              // Preserve referralCode from current user if not present in latest
-              if (latest.referralCode == null && user?.referralCode != null) {
-                latest.referralCode = user.referralCode;
-              }
-              if (JSON.stringify(latest) !== JSON.stringify(user)) {
-                // normalize id field
-                const normalized = { ...latest, id: latest.user_id || latest.id };
-                setUser(normalized as any);
-              }
-            }
-          } catch (e) {
-            console.error('Sync failed:', e);
-          }
-        }, 8000);
-      }
-      return () => {
-        if (interval) clearInterval(interval);
-      };
+useEffect(() => {
+      // Profile sync disabled - endpoint /api/membership/users/ not available on backend
+      // To re-enable, ensure backend has endpoint: GET /api/membership/users/{userId}
     }, [user]);
 
   useEffect(() => {
@@ -131,6 +102,46 @@ const App: React.FC = () => {
     setActiveTab('dashboard');
   };
 
+  // Fetch transaction history from backend
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (user && activeTab === 'history') {
+        try {
+          const token = localStorage.getItem('jwtToken');
+          const response = await fetch(`${API_BASE_URL}/api/membership/transactions/history/${user.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': token ? `Bearer ${token}` : '',
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.ok) {
+            const result = await response.json();
+            if (result?.success && Array.isArray(result?.data)) {
+              const mappedTransactions = result.data.map((t: any) => ({
+                id: t.id || t.transaction_id,
+                date: t.created_at || t.transaction_date,
+                description: 'Pesanan Ngolab Express',
+                amount: t.total || t.total_amount || 0,
+                type: t.type || 'PURCHASE',
+                points: t.points || 0,
+                status: t.status || 'SUCCESS',
+                items: (t.items || []).map((item: any) => ({
+                  name: item.product_name || item.name,
+                  quantity: item.quantity || 1
+                }))
+              }));
+              setTransactions(mappedTransactions);
+            }
+          }
+        } catch (error) {
+          console.error('Fetch transactions failed:', error);
+        }
+      }
+    };
+    fetchTransactions();
+  }, [user?.id, activeTab]);
+
   const handleRegisterSuccess = (newUser: User) => {
     setUser(newUser);
     setIsRegistering(false);
@@ -175,7 +186,7 @@ const App: React.FC = () => {
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/membership/profile/${updatedUser.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/membership/users/${updatedUser.id}`, {
         method: 'PUT',
         body: formData,
         headers: { 'X-Connection-Key': CONNECTION_KEY },
@@ -221,7 +232,7 @@ const App: React.FC = () => {
         const result = await response.json();
         if (result.success) {
           // optionally refresh profile
-          const ref = await fetch(`${API_BASE_URL}/api/membership/profile/${user.id}`, {
+          const ref = await fetch(`${API_BASE_URL}/api/membership/users/${user.id}`, {
             headers: { 'X-Connection-Key': CONNECTION_KEY }
           });
           const refRes = await ref.json().catch(() => ({}));
