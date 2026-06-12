@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, UserRole, Transaction, MemberLevel } from '../../types';
 import Card from '../../components/Card';
 import { PlayGameCard, MenuRecommendationCard } from '../DashboardCommon';
-import { MOCK_MENU } from '../../constants';
+import { MOCK_MENU, API_BASE_URL } from '../../constants';
 import { analyzeAffiliateGrowth, analyzeBusinessInsight } from '../../services/geminiService';
 import { getAffiliateNetwork } from '../../services/apiService';
 
@@ -42,7 +42,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   useEffect(() => {
     const fetchAiInsights = async () => {
       try {
-        const response = await fetch(`http://10.20.113.132:4000/api/kiosk/ai-insights/${user.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/kiosk/ai-insights/${user.id}`);
         if (response.ok) {
           const result = await response.json();
           const aiData = result?.data || result;

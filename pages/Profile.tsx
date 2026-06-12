@@ -421,7 +421,7 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
 
           <button 
             onClick={() => {
-              setEditForm({ name: user.username || user.name, phone: user.phone_number || user.phone || '', photoURL: user.photoURL });
+              setEditForm({ name: user.username || user.name, phone: user.phone_number || user.phone || '', nim: user.nim || '', photoURL: user.photoURL });
               setView('EDIT');
             }}
             className="px-8 py-3.5 bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-orange-100 hover:bg-orange-700 hover:-translate-y-0.5 transition-all"

@@ -3,8 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Transaction, MemberLevel } from '../../types';
 import Card from '../../components/Card';
 import { PlayGameCard, MenuRecommendationCard } from '../DashboardCommon';
-import { MOCK_MENU } from '../../constants';
-import { analyzeHistoryForRewards } from '../../services/geminiService';
+import { API_BASE_URL, MOCK_MENU } from '../../constants';
 import QRCode from 'react-qr-code';
 import { QrCode, TrendingUp, Sparkles, Gift, Crown, Star, Gamepad2, History, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 
@@ -16,24 +15,37 @@ interface MemberDashboardProps {
 const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, transactions }) => {
   const [aiAdvice, setAiAdvice] = useState<string>("Menganalisis pola belanja Anda...");
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchAI = async () => {
-      try {
-        const advice = await analyzeHistoryForRewards(transactions);
-        if (isMounted) setAiAdvice(advice);
-      } catch (err) {
-        console.error("Dashboard AI Error:", err);
-      }
-    };
-    
-    // Only fetch if we have transactions or user data
-    if (transactions.length > 0 || user.id) {
-      fetchAI();
-    }
+ useEffect(() => {
+  let isMounted = true;
 
-    return () => { isMounted = false; };
-  }, [transactions.length, user.id]); // Use length and id to stabilize
+  const fetchAIInsight = async () => {
+    try {
+      if (!user?.id) return;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/kiosk/ai-insights/${user.id}`
+      );
+
+      const result = await response.json();
+      console.log('AI INSIGHT MEMBER:', result);
+
+      if (isMounted && result?.data?.ai_recommendation) {
+        setAiAdvice(result.data.ai_recommendation);
+      }
+    } catch (err) {
+      console.error("Dashboard AI Member Error:", err);
+      if (isMounted) {
+        setAiAdvice("Menunggu data analitik AI...");
+      }
+    }
+  };
+
+  fetchAIInsight();
+
+  return () => {
+    isMounted = false;
+  };
+}, [user?.id]); // Use length and id to stabilize
 
   const isGold = user.level === MemberLevel.GOLD;
   const overallPoints = (user.totalPoints || 0) + (user.cashbackPoints || 0);

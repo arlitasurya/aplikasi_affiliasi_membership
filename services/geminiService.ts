@@ -105,7 +105,7 @@ export const getRecommendation = async (userId: string): Promise<{
 } | null> => {
   try {
 // Hardcoded URL to ensure correct endpoint
-    const centralUrl = 'http://10.20.113.132:4000';
+    const centralUrl = API_BASE_URL;
     const response = await fetch(`${centralUrl}/api/kiosk/ai-insights/${userId}`, {
       method: 'GET',
       headers: {
@@ -147,7 +147,7 @@ export const getRecommendation = async (userId: string): Promise<{
 export const analyzeAffiliateGrowth = async (user: User): Promise<string> => {
   try {
     // Hardcoded URL to ensure correct endpoint
-    const centralUrl = 'http://10.20.113.132:4000';
+    const centralUrl = API_BASE_URL;
     const response = await fetch(`${centralUrl}/api/kiosk/ai-insights/${user.id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }

@@ -248,9 +248,9 @@ useEffect(() => {
       formData.append('nim', updatedUser.nim || '');
 
       if (updatedUser.photoURL) {
-        const photoField = updatedUser.photoURL;
+        const photoField = updatedUser.photoURL as unknown;
         if (photoField instanceof File) {
-          formData.append('profile_picture', photoField);
+          formData.append('profile_picture', photoField as File);
         } else if (typeof photoField === 'string' && photoField.startsWith('data:')) {
           const response = await fetch(photoField);
           const blob = await response.blob();
