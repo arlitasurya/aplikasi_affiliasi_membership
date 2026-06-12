@@ -72,7 +72,7 @@ const getAuthHeaders = (skipConnectionKey = false) => {
 /**
  * Central Backend API URL - untuk KYC verification (OCR processing)
  * Diambil dari .env file: VITE_CENTRAL_API_URL
- * Default: http://localhost:4000 (jika tidak ada di .env)
+  * Default: http://10.20.113.132:4000 (jika tidak ada di .env)
  * 
  * Endpoint KYC: {CENTRAL_API_URL}/api/membership/affiliate/verify
  */
@@ -85,9 +85,8 @@ const getCentralApiUrl = () => {
     return centralUrl;
   }
   
-// Fallback ke IP 10.20.112.136 jika tidak ada .env (per backend team)
-    const fallbackUrl = 'http://10.20.112.136:4000';
-    console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
+  const fallbackUrl = 'http://10.20.113.132:4000';
+  console.warn(`⚠️ VITE_CENTRAL_API_URL tidak ditemukan di .env, menggunakan fallback: ${fallbackUrl}`);
   return fallbackUrl;
 };
 

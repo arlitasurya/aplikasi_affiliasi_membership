@@ -24,6 +24,7 @@ const App: React.FC = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [commissionLogs, setCommissionLogs] = useState<any[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>(MOCK_VOUCHERS);
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
 
@@ -103,44 +104,116 @@ useEffect(() => {
   };
 
   // Fetch transaction history from backend
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      if (user && activeTab === 'history') {
-        try {
-          const token = localStorage.getItem('jwtToken');
-          const response = await fetch(`${API_BASE_URL}/api/membership/transactions/history/${user.id}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': token ? `Bearer ${token}` : '',
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.ok) {
-            const result = await response.json();
-            if (result?.success && Array.isArray(result?.data)) {
-              const mappedTransactions = result.data.map((t: any) => ({
-                id: t.id || t.transaction_id,
-                date: t.created_at || t.transaction_date,
-                description: 'Pesanan Ngolab Express',
-                amount: t.total || t.total_amount || 0,
-                type: t.type || 'PURCHASE',
-                points: t.points || 0,
-                status: t.status || 'SUCCESS',
-                items: (t.items || []).map((item: any) => ({
-                  name: item.product_name || item.name,
-                  quantity: item.quantity || 1
-                }))
-              }));
-              setTransactions(mappedTransactions);
-            }
-          }
-        } catch (error) {
-          console.error('Fetch transactions failed:', error);
+  // Fetch transaction history from backend
+useEffect(() => {
+  const fetchTransactions = async () => {
+    if (!user || !['history', 'history_purchase', 'history_commission'].includes(activeTab)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const userId = user.id;
+
+      console.log('USER ID UNTUK HISTORY:', userId);
+      console.log('TOKEN:', token);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/membership/transactions/history/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          },
         }
+      );
+
+      const result = await response.json();
+console.log('HASIL HISTORY:', result);
+
+if (Array.isArray(result?.data)) {
+
+  const mappedTransactions = result.data.map((t: any) => ({
+    id: t.order_id || t.order_code,
+    date: t.transaction_date || t.created_at,
+    description: t.order_code
+      ? `Pesanan ${t.order_code}`
+      : 'Pesanan Ngolab Express',
+    amount: Number(t.total || 0),
+    type: 'PURCHASE',
+    points: Number(t.points_earned || 0),
+    status: t.status || 'SUCCESS',
+    items: (t.items || []).map((item: any) => ({
+      name: item.product_name_snapshot || item.item_name || 'Produk',
+      quantity: item.qty || 1,
+    })),
+  })) as Transaction[];
+
+  setTransactions(mappedTransactions);
+
+} else {
+  setTransactions([]);
+}
+    } catch (error) {
+      console.error('Fetch transactions failed:', error);
+      setTransactions([]);
+    }
+  };
+
+  fetchTransactions();
+}, [user?.id, activeTab]);
+// Fetch commission logs from backend
+// Fetch commission logs from backend
+useEffect(() => {
+  const fetchCommissionLogs = async () => {
+    if (!user || !['history', 'history_purchase', 'history_commission'].includes(activeTab)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('jwtToken');
+      const userId = user.id;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/membership/commission-logs/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+      console.log('HASIL KOMISI:', result);
+
+      if (Array.isArray(result?.data)) {
+        const mappedCommissionLogs = result.data.map((log: any) => ({
+          id: log.id,
+          created_at: log.created_at,
+          note: log.member_id
+            ? `Komisi Referral: ${log.member_id}`
+            : 'Komisi Referral',
+          points: Number(log.commission_earned || 0),
+          point_type: 'commission',
+          reference_type: 'affiliate',
+          reference_id: log.transaction_code || log.member_id,
+        }));
+
+        setCommissionLogs(mappedCommissionLogs);
+      } else {
+        setCommissionLogs([]);
       }
-    };
-    fetchTransactions();
-  }, [user?.id, activeTab]);
+    } catch (error) {
+      console.error('Fetch commission logs failed:', error);
+      setCommissionLogs([]);
+    }
+  };
+
+  fetchCommissionLogs();
+}, [user?.id, activeTab]);
 
   const handleRegisterSuccess = (newUser: User) => {
     setUser(newUser);
@@ -339,8 +412,8 @@ useEffect(() => {
               <p className="text-slate-500 text-sm">Pantau semua aktivitas belanja, reward, dan komisi Anda.</p>
             </header>
             <TransactionList 
-              transactions={transactions || []} 
-              pointLogs={combinedLogs}
+            transactions={transactions || []} 
+            pointLogs={commissionLogs}
             />
           </div>
         );
