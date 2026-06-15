@@ -432,7 +432,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fff7ed]">
+    <div className="min-h-screen bg-slate-50">
       <Sidebar role={user.role} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} userName={user.name} />
       <main className="ml-64 p-8 md:p-12 flex flex-col min-h-screen">
         <div className="max-w-7xl mx-auto flex-1 w-full">

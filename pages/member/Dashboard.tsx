@@ -1,300 +1,418 @@
-
 import React, { useEffect, useState } from 'react';
 import { User, Transaction, MemberLevel } from '../../types';
-import Card from '../../components/Card';
-import { PlayGameCard, MenuRecommendationCard } from '../DashboardCommon';
+import { MenuRecommendationCard } from '../DashboardCommon';
 import { API_BASE_URL, MOCK_MENU } from '../../constants';
 import QRCode from 'react-qr-code';
-import { QrCode, TrendingUp, Sparkles, Gift, Crown, Star, Gamepad2, History, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import {
+  TrendingUp,
+  Sparkles,
+  Gift,
+  Crown,
+  Star,
+  Gamepad2,
+  History,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Bell,
+  ArrowRight,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface MemberDashboardProps {
   user: User;
   transactions: Transaction[];
 }
 
-const MemberDashboard: React.FC<MemberDashboardProps> = ({ user, transactions }) => {
-  const [aiAdvice, setAiAdvice] = useState<string>("Menganalisis pola belanja Anda...");
+const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
+  const [aiAdvice, setAiAdvice] = useState<string>('Menganalisis pola belanja Anda...');
 
- useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-  const fetchAIInsight = async () => {
-    try {
-      if (!user?.id) return;
+    const fetchAIInsight = async () => {
+      try {
+        if (!user?.id) return;
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/kiosk/ai-insights/${user.id}`
-      );
+        const response = await fetch(`${API_BASE_URL}/api/kiosk/ai-insights/${user.id}`);
+        const result = await response.json();
 
-      const result = await response.json();
-      console.log('AI INSIGHT MEMBER:', result);
+        console.log('AI INSIGHT MEMBER:', result);
 
-      if (isMounted && result?.data?.ai_recommendation) {
-        setAiAdvice(result.data.ai_recommendation);
+        if (isMounted && result?.data?.ai_recommendation) {
+          setAiAdvice(result.data.ai_recommendation);
+        }
+      } catch (err) {
+        console.error('Dashboard AI Member Error:', err);
+        if (isMounted) {
+          setAiAdvice('Menunggu data analitik AI...');
+        }
       }
-    } catch (err) {
-      console.error("Dashboard AI Member Error:", err);
-      if (isMounted) {
-        setAiAdvice("Menunggu data analitik AI...");
-      }
-    }
-  };
+    };
 
-  fetchAIInsight();
+    fetchAIInsight();
 
-  return () => {
-    isMounted = false;
-  };
-}, [user?.id]); // Use length and id to stabilize
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const isGold = user.level === MemberLevel.GOLD;
   const overallPoints = (user.totalPoints || 0) + (user.cashbackPoints || 0);
 
-  // Fallback mock history if no logs from backend yet
-  const pointHistory = user.pointLogs && user.pointLogs.length > 0 
-    ? user.pointLogs 
-    : [
-        { id: 'h1', date: new Date().toISOString(), amount: 1500, source: 'Bonus Aktivasi Member', type: 'IN' as const },
-        { id: 'h2', date: new Date().toISOString(), amount: 500, source: 'Main Game Level 1', type: 'IN' as const },
-        { id: 'h3', date: new Date().toISOString(), amount: 250, source: 'Cashback Kopi Susu', type: 'IN' as const },
-      ];
+  const displayName =
+    user.name && typeof user.name === 'string' ? user.name.split(' ')[0] : 'User';
 
-  // Dynamic styling based on level
-  const levelConfig = isGold 
-    ? {
-        cardBg: "bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600 shadow-amber-100 border-amber-300",
-        titleColor: "text-amber-50",
-        levelColor: "text-white",
-        iconColor: "text-white",
-        progressContainer: "bg-white/20 border-white/10",
-        progressBar: "bg-white",
-        progressText: "text-amber-50"
-      }
-    : {
-        cardBg: "bg-gradient-to-br from-slate-200 via-slate-50 to-slate-300 shadow-slate-100 border-slate-200",
-        titleColor: "text-slate-400",
-        levelColor: "text-slate-700",
-        iconColor: "text-slate-400",
-        progressContainer: "bg-slate-200 border-slate-300/50",
-        progressBar: "bg-slate-500",
-        progressText: "text-slate-500"
-      };
+  const pointHistory =
+    user.pointLogs && user.pointLogs.length > 0
+      ? user.pointLogs
+      : [
+          {
+            id: 'h1',
+            date: new Date().toISOString(),
+            amount: 1500,
+            source: 'Bonus Aktivasi Member',
+            type: 'IN' as const,
+          },
+          {
+            id: 'h2',
+            date: new Date().toISOString(),
+            amount: 500,
+            source: 'Main Game Level 1',
+            type: 'IN' as const,
+          },
+          {
+            id: 'h3',
+            date: new Date().toISOString(),
+            amount: 250,
+            source: 'Cashback Kopi Susu',
+            type: 'IN' as const,
+          },
+        ];
 
-  // Safety check untuk nama agar tidak error split
-  const displayName = user.name && typeof user.name === 'string' 
-    ? user.name.split(' ')[0] 
-    : 'User';
+  const levelName = user.level || 'SILVER';
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">Halo, {displayName}! 👋</h1>
-        <p className="text-slate-500">Ayo kumpulkan poin belanja dan nikmati keuntungannya.</p>
-      </header>
+    <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 lg:px-10 animate-in fade-in duration-300">
+      <div className="mx-auto max-w-7xl space-y-7">
+        {/* Header */}
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight">
+              Halo, {displayName}! 👋
+            </h1>
+            <p className="mt-1 text-sm md:text-base text-slate-500">
+              Ayo kumpulkan poin belanja dan nikmati keuntungannya.
+            </p>
+          </div>
 
-      {/* Main Stats and QR */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden relative">
-            <div className="grid grid-cols-1 md:grid-cols-5 h-full">
-              <div className="md:col-span-3 p-8 flex flex-col justify-between">
+          <div className="hidden md:flex items-center gap-3">
+            <button className="relative h-11 w-11 rounded-2xl border border-slate-100 bg-white shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 transition">
+              <Bell size={20} />
+              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-orange-600" />
+            </button>
+
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 border border-orange-100 flex items-center justify-center text-xl shadow-sm">
+              👤
+            </div>
+          </div>
+        </header>
+
+        {/* Top Section */}
+        <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+          {/* QR Card */}
+          <div className="xl:col-span-3 rounded-[2rem] border border-slate-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)] overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-5 min-h-[280px]">
+              <div className="md:col-span-3 p-7 md:p-9 flex flex-col justify-between">
                 <div>
-                  <span className="text-slate-300 text-[10px] font-extrabold uppercase tracking-[0.2em]">MEMBER QR CODE</span>
-                  <h2 className="text-3xl font-black text-slate-900 mt-2">Scan di Kasir</h2>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
+                    Member QR Code
+                  </p>
+                  <h2 className="mt-3 text-3xl md:text-4xl font-black text-slate-950">
+                    Scan di Kasir
+                  </h2>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Tunjukkan QR code ini saat pembayaran.
+                  </p>
                 </div>
-                <div className="mt-8 flex items-center space-x-12">
-                  <div>
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.15em] mb-1">Total Saldo Poin</p>
-                    <p className="text-4xl font-black text-orange-600 tracking-tight">
+
+                <div className="mt-8 rounded-3xl border border-slate-100 bg-slate-50/60 p-5">
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+                    Total Saldo Poin
+                  </p>
+
+                  <div className="mt-2 flex items-end gap-2">
+                    <span className="text-5xl font-black text-orange-600 leading-none">
                       {overallPoints.toLocaleString()}
-                      <span className="text-xs ml-1 text-slate-400 font-bold">PTS</span>
-                    </p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="flex items-center text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-1.5"></span>
-                        Cashback: {(user.cashbackPoints || 0).toLocaleString()}
-                      </div>
-                      <div className="flex items-center text-[10px] text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
-                        Main: {(user.totalPoints || 0).toLocaleString()}
-                      </div>
-                    </div>
+                    </span>
+                    <span className="text-sm font-bold text-slate-400 mb-1">PTS</span>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 border border-slate-100">
+                      <span className="h-2 w-2 rounded-full bg-orange-500" />
+                      Cashback: {(user.cashbackPoints || 0).toLocaleString()}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500 border border-slate-100">
+                      <span className="h-2 w-2 rounded-full bg-slate-400" />
+                      Main: {(user.totalPoints || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="md:col-span-2 bg-gradient-to-br from-orange-600 to-amber-700 p-6 flex items-center justify-center relative overflow-hidden">
-                <div className="bg-white p-3 rounded-3xl shadow-2xl relative z-10">
+
+              <div className="md:col-span-2 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 p-7 flex items-center justify-center relative overflow-hidden">
+                <Sparkles className="absolute -right-8 -top-8 h-36 w-36 text-white/10" />
+                <Sparkles className="absolute -left-10 bottom-4 h-28 w-28 text-white/10" />
+
+                <div className="relative z-10 rounded-[1.7rem] bg-white p-4 shadow-2xl">
                   {user?.id ? (
-                    <QRCode value={String(user.id)} size={120} />
+                    <QRCode value={String(user.id)} size={135} />
                   ) : (
-                    <div style={{ width: 120, height: 120, backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, fontSize: 12, color: '#9ca3af' }}>
+                    <div className="h-[135px] w-[135px] rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">
                       Memuat QR...
                     </div>
                   )}
-                  <p className="text-center text-[9px] font-bold text-orange-600 mt-2 uppercase tracking-tighter">ID: {String(user?.id || 'N/A').toUpperCase()}</p>
-                </div>
-                <Sparkles className="absolute -right-6 -top-6 text-white/10 w-32 h-32" />
-              </div>
-            </div>
-          </div>
-
-          {/* New CTA Card: Mini-Game Promotion */}
-          <div className="bg-gradient-to-r from-orange-50 to-white rounded-3xl p-4 border border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-2xl text-orange-600 shadow-sm group-hover:scale-110 transition-transform">
-                <Gamepad2 size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 leading-tight">Kumpulkan Lebih Banyak Ngolab Poin!</h3>
-                <p className="text-xs text-slate-500 leading-tight mt-0.5">
-                  Mainkan mini-game seru di ekosistem utama kami dan dapatkan tambahan poin untuk ditukar dengan makanan.
-                </p>
-              </div>
-            </div>
-            <button className="bg-orange-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-orange-700 transition-all shadow-lg shadow-orange-200 whitespace-nowrap">
-              Main Sekarang 🎮
-            </button>
-          </div>
-        </div>
-
-        <div className="lg:col-span-1">
-          <div className={`h-full rounded-[2rem] p-8 border flex flex-col justify-center relative shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden group ${levelConfig.cardBg}`}>
-            {/* Decorative Shine Effect */}
-            <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:left-[100%] transition-all duration-1000"></div>
-            
-            <div className="flex justify-between items-center relative z-10">
-              <div>
-                <p className={`text-xs font-black uppercase tracking-[0.15em] mb-1 ${levelConfig.titleColor}`}>
-                  PERINGKAT
-                </p>
-                <p className={`text-3xl font-black uppercase tracking-wider drop-shadow-sm ${levelConfig.levelColor}`}>
-                  {user.level || 'SILVER'}
-                </p>
-              </div>
-              <div className={levelConfig.iconColor}>
-                <Crown size={42} fill="currentColor" className="drop-shadow-md" />
-              </div>
-            </div>
-            
-            {!isGold && (
-              <div className="mt-6 relative z-10">
-                <div className={`w-full h-2 rounded-full overflow-hidden border ${levelConfig.progressContainer}`}>
-                  <div className={`h-full rounded-full transition-all duration-1000 ${levelConfig.progressBar}`} style={{ width: '75%' }}></div>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                  <p className={`text-[10px] font-bold uppercase tracking-tighter ${levelConfig.progressText}`}>
-                    75% Menuju Level Gold
+                  <p className="mt-3 text-center text-[9px] font-black text-orange-600 uppercase tracking-tighter">
+                    ID: {String(user?.id || 'N/A').toUpperCase()}
                   </p>
-                  <p className={`text-[10px] font-black ${levelConfig.progressText}`}>750 / 1000</p>
                 </div>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* Level Card */}
+          <div className="xl:col-span-2 rounded-[2rem] border border-slate-100 bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-[0_18px_50px_rgba(15,23,42,0.06)] p-7 md:p-8 relative overflow-hidden">
+            <Crown className="absolute right-8 top-8 h-14 w-14 text-slate-300" fill="currentColor" />
+
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
+              Peringkat Member
+            </p>
+            <h2 className="mt-3 text-3xl font-black text-slate-950 uppercase tracking-wide">
+              {levelName}
+            </h2>
+
+            <div className="mt-7">
+              <div className="h-3 w-full rounded-full bg-slate-200 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    isGold
+                      ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                      : 'bg-gradient-to-r from-orange-500 to-amber-400'
+                  }`}
+                  style={{ width: isGold ? '100%' : '75%' }}
+                />
+              </div>
+
+              <div className="mt-3 flex justify-between text-xs font-bold text-slate-500">
+                <span>{isGold ? 'Level maksimal tercapai' : '750 poin menuju level GOLD'}</span>
+                <span>{isGold ? 'MAX' : '750 / 1000'}</span>
+              </div>
+            </div>
+
+            <div className="mt-7 rounded-3xl border border-orange-100 bg-orange-50/60 p-5">
+              <div className="flex gap-3">
+                <div className="h-11 w-11 rounded-2xl bg-white flex items-center justify-center text-orange-600 shadow-sm">
+                  <Gift size={22} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900">Keuntungan {levelName}</h3>
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 size={14} className="text-emerald-500" />
+                      Bonus poin transaksi
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 size={14} className="text-emerald-500" />
+                      Promo eksklusif
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <CheckCircle2 size={14} className="text-emerald-500" />
+                      Cashback spesial
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {isGold && (
-              <div className="mt-6 flex items-center space-x-2 relative z-10">
-                <div className="flex -space-x-1">
-                  {[1, 2, 3].map(i => <Star key={i} size={12} fill="white" className="text-white" />)}
-                </div>
-                <p className="text-[10px] font-bold uppercase tracking-tighter text-white">Level Maksimal Tercapai</p>
+              <div className="mt-5 flex items-center gap-1 text-amber-500">
+                {[1, 2, 3].map((i) => (
+                  <Star key={i} size={15} fill="currentColor" />
+                ))}
               </div>
             )}
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* AI Advice & Game */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-100 relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center space-x-2 text-orange-700 font-bold mb-3">
-              <Sparkles size={20} />
-              <span>AI Recommendation</span>
+        {/* Game CTA */}
+        <section className="rounded-[1.7rem] border border-orange-100 bg-white shadow-sm p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100">
+              <Gamepad2 size={26} />
             </div>
-            <p className="text-slate-800 leading-relaxed font-medium">
-              "{aiAdvice}"
-            </p>
+            <div>
+              <h3 className="font-black text-slate-900">
+                Kumpulkan Lebih Banyak Ngolab Poin!
+              </h3>
+              <p className="mt-1 text-sm text-slate-500 max-w-2xl">
+                Mainkan mini-game seru di ekosistem utama kami dan dapatkan tambahan poin
+                untuk ditukar dengan makanan.
+              </p>
+            </div>
           </div>
-          <Sparkles className="absolute -right-4 -top-4 text-orange-200/50 w-24 h-24" />
-        </Card>
-        
-        <div className="bg-gradient-to-r from-orange-600 to-amber-500 rounded-[2rem] p-8 text-white relative overflow-hidden shadow-lg shadow-orange-100 group">
-          <div className="relative z-10">
-            <h3 className="text-2xl font-black mb-2">Dapatkan Penghasilan Tambahan!</h3>
-            <p className="text-orange-50 mb-6 text-sm font-medium opacity-90">Jadilah Affiliate Partner kami dan mulai kumpulkan komisi dari setiap referral.</p>
-            <button 
+
+          <button className="rounded-2xl bg-orange-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 hover:bg-orange-700 transition">
+            Main Sekarang 🎮
+          </button>
+        </section>
+
+        {/* AI + Point History */}
+        <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="rounded-[2rem] border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-7 shadow-sm relative overflow-hidden min-h-[230px]">
+            <div className="relative z-10 max-w-md">
+              <div className="flex items-center gap-2 text-orange-600 font-black">
+                <Sparkles size={22} />
+                <span>AI Recommendation</span>
+              </div>
+
+              <p className="mt-6 text-base leading-relaxed font-semibold text-slate-800">
+                "{aiAdvice}"
+              </p>
+            </div>
+
+            <div className="absolute right-8 bottom-6 hidden md:flex h-32 w-32 rounded-[2rem] bg-gradient-to-br from-orange-500 to-amber-400 items-center justify-center text-white shadow-xl shadow-orange-100 rotate-3">
+              <span className="text-4xl font-black">AI</span>
+            </div>
+
+            <Sparkles className="absolute right-4 top-4 h-24 w-24 text-orange-200/50" />
+          </div>
+
+          <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History size={21} className="text-orange-600" />
+                <h2 className="text-lg font-black text-slate-900">
+                  Riwayat Poin Pemasukan
+                </h2>
+              </div>
+
+              <button className="hidden sm:inline-flex items-center gap-1 text-sm font-black text-orange-600 hover:underline">
+                Lihat Semua <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {pointHistory.slice(0, 3).map((log) => (
+                <div
+                  key={log.id}
+                  className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50/60 rounded-2xl px-2 transition"
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
+                        log.type === 'IN'
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : 'bg-rose-50 text-rose-600'
+                      }`}
+                    >
+                      {log.type === 'IN' ? (
+                        <ArrowDownLeft size={20} />
+                      ) : (
+                        <ArrowUpRight size={20} />
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-black text-slate-900">{log.source}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {new Date(log.date).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p
+                      className={`text-base font-black ${
+                        log.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'
+                      }`}
+                    >
+                      {log.type === 'IN' ? '+' : '-'}
+                      {log.amount.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-slate-300">
+                      Poin
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {pointHistory.length === 0 && (
+              <div className="py-12 text-center">
+                <History size={42} className="mx-auto mb-3 text-slate-200" />
+                <p className="font-medium text-slate-400">Belum ada riwayat poin.</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Affiliate CTA */}
+        <section className="rounded-[2rem] bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 p-7 md:p-8 text-white shadow-xl shadow-orange-100 relative overflow-hidden">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div>
+              <h3 className="text-2xl md:text-3xl font-black">
+                Dapatkan Penghasilan Tambahan!
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm md:text-base text-orange-50 font-medium">
+                Jadilah Affiliate Partner kami dan mulai kumpulkan komisi dari setiap referral.
+              </p>
+            </div>
+
+            <button
               onClick={() => {
-                // We need to trigger a tab change here, but we don't have setActiveTab.
-                // I'll assume the parent handles this or I'll need to pass it.
-                // For now, I'll use a window event or just a placeholder if I can't access setActiveTab.
-                // Wait, I should probably pass setActiveTab to MemberDashboard.
-                window.dispatchEvent(new CustomEvent('changeTab', { detail: 'upgrade_affiliate' }));
+                window.dispatchEvent(
+                  new CustomEvent('changeTab', { detail: 'upgrade_affiliate' })
+                );
               }}
-              className="px-6 py-3 bg-white text-orange-600 rounded-xl font-bold text-sm hover:bg-orange-50 transition-all shadow-xl"
+              className="rounded-2xl bg-white px-6 py-3 text-sm font-black text-orange-600 shadow-xl hover:bg-orange-50 transition"
             >
               Aktifkan Fitur Afiliasi Sekarang
             </button>
           </div>
-          <TrendingUp className="absolute -right-4 -bottom-4 text-white/10 w-32 h-32 transform -rotate-12 group-hover:scale-110 transition-transform duration-700" />
-        </div>
-      </div>
 
-      {/* Points History Section */}
-      <section>
-        <div className="flex items-center mb-6">
-          <div className="p-2 bg-orange-50 rounded-lg text-orange-600 mr-3">
-            <History size={20} />
+          <TrendingUp className="absolute -right-8 -bottom-8 h-40 w-40 text-white/10 -rotate-12" />
+        </section>
+
+        {/* Promo Section */}
+        <section>
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900">
+              <Gift className="text-orange-600" size={24} />
+              Promo Eksklusif
+            </h2>
+
+            <button className="inline-flex items-center gap-1 text-sm font-black text-orange-600 hover:underline">
+              Lihat Semua Promo <ArrowRight size={16} />
+            </button>
           </div>
-          <h2 className="text-xl font-bold text-slate-800">Riwayat Poin Pemasukan</h2>
-        </div>
-        
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-          <div className="divide-y divide-slate-50">
-            {pointHistory.map((log) => (
-              <div key={log.id} className="p-5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className={`p-2.5 rounded-xl ${log.type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                    {log.type === 'IN' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-800 text-sm">{log.source}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                      {new Date(log.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className={`font-black ${log.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {log.type === 'IN' ? '+' : '-'}{log.amount.toLocaleString()}
-                  </p>
-                  <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">NGOLAB POIN</p>
-                </div>
-              </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            {MOCK_MENU.map((menu) => (
+              <MenuRecommendationCard key={menu.id} menu={menu} />
             ))}
           </div>
-          {pointHistory.length === 0 && (
-            <div className="p-12 text-center">
-              <History size={48} className="mx-auto text-slate-200 mb-3" />
-              <p className="text-slate-400 font-medium">Belum ada riwayat poin.</p>
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
 
-      {/* Promo Section */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-800 flex items-center">
-            <Gift className="mr-2 text-orange-600" size={24} />
-            Promo Eksklusif
-          </h2>
-          <button className="text-orange-600 text-sm font-bold hover:underline">Lihat Semua</button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {MOCK_MENU.map(menu => (
-            <MenuRecommendationCard key={menu.id} menu={menu} />
-          ))}
-        </div>
-      </section>
+        <footer className="border-t border-slate-100 py-7 text-center">
+          <p className="mt-2 text-xs text-slate-400">
+            © 2024 NgolabHub Ecosystem. Hak Cipta Dilindungi Undang-Undang.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 };

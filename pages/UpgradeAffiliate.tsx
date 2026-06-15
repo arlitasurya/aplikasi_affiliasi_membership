@@ -184,178 +184,308 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <header className="flex items-center space-x-4">
-        <button 
-          onClick={step === 'INTRO' ? onBack : () => setStep('INTRO')}
-          className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-        >
-          <ArrowLeft size={24} className="text-slate-600" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Upgrade ke Afiliasi</h1>
-          <p className="text-slate-500">
-            {step === 'INTRO' ? 'Bangun jaringan bisnis Anda bersama NgolabHub.' : 'Scan KTM Telkom University untuk verifikasi partner.'}
-          </p>
-        </div>
-      </header>
+  <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <header className="mb-8 flex items-center gap-4">
+      <button
+        onClick={step === 'INTRO' ? onBack : () => setStep('INTRO')}
+        className="h-11 w-11 rounded-2xl border border-slate-100 bg-white text-slate-600 shadow-sm flex items-center justify-center hover:bg-slate-50 transition"
+      >
+        <ArrowLeft size={22} />
+      </button>
 
-      <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
-        {step === 'INTRO' && (
-          <div className="p-10 space-y-8">
-            <div className="text-center space-y-4">
-              <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-orange-100/50">
-                <Sparkles size={40} />
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-500">
+          Affiliate Partner
+        </p>
+        <h1 className="text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
+          Upgrade ke Afiliasi
+        </h1>
+        <p className="mt-1 text-sm md:text-base text-slate-500">
+          {step === 'INTRO'
+            ? 'Bangun jaringan bisnis Anda bersama NgolabHub.'
+            : 'Scan KTM Telkom University untuk verifikasi partner.'}
+        </p>
+      </div>
+    </header>
+
+    {step === 'INTRO' && (
+      <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-3 rounded-[2.5rem] border border-slate-100 bg-white p-7 md:p-10 shadow-[0_18px_50px_rgba(15,23,42,0.06)] relative overflow-hidden">
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-orange-100/60 blur-2xl" />
+          <div className="absolute right-10 bottom-10 hidden md:block text-orange-100">
+            <Sparkles size={120} />
+          </div>
+
+          <div className="relative z-10 max-w-2xl">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.7rem] bg-orange-50 text-orange-600 shadow-sm border border-orange-100">
+              <Sparkles size={38} />
+            </div>
+
+            <h2 className="text-3xl md:text-5xl font-black text-slate-950 leading-tight">
+              Jadi Partner NgolabHub dan dapatkan penghasilan tambahan.
+            </h2>
+
+            <p className="mt-5 text-base md:text-lg leading-relaxed text-slate-500">
+              Program afiliasi dirancang untuk mahasiswa Telkom University agar dapat
+              membangun jaringan referral, memantau performa, dan mendapatkan komisi
+              dari transaksi yang berhasil.
+            </p>
+
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
+                  <CheckCircle size={22} />
+                </div>
+                <h3 className="font-black text-slate-900">Komisi Tinggi</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  Dapatkan komisi dari transaksi referral.
+                </p>
               </div>
-              <h2 className="text-2xl font-black text-slate-900">Siap Menjadi Partner Kami?</h2>
-              <p className="text-slate-500 leading-relaxed">
-                Program Afiliasi NgolabHub dirancang khusus untuk mahasiswa Telkom University agar bisa mendapatkan penghasilan tambahan sambil membangun jaringan.
+
+              <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
+                  <Sparkles size={22} />
+                </div>
+                <h3 className="font-black text-slate-900">AI Insight</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  Pantau performa jaringan dengan insight.
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-sm">
+                  <CheckCircle size={22} />
+                </div>
+                <h3 className="font-black text-slate-900">Reward Partner</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  Dapatkan benefit khusus affiliate aktif.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setStep('SCANNING')}
+              className="mt-9 inline-flex w-full sm:w-auto items-center justify-center rounded-2xl bg-orange-600 px-8 py-4 text-base font-black text-white shadow-xl shadow-orange-100 hover:bg-orange-700 transition active:scale-95"
+            >
+              Mulai Verifikasi Sekarang
+              <ArrowLeft className="ml-2 rotate-180" size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="xl:col-span-2 space-y-6">
+          <div className="rounded-[2.5rem] border border-orange-100 bg-gradient-to-br from-orange-600 to-amber-500 p-7 text-white shadow-xl shadow-orange-100 relative overflow-hidden">
+            <Sparkles className="absolute -right-8 -top-8 h-36 w-36 text-white/10" />
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-100">
+              Syarat Verifikasi
+            </p>
+            <h3 className="mt-3 text-3xl font-black">
+              KTM Telkom University Aktif
+            </h3>
+            <p className="mt-3 text-sm leading-relaxed text-orange-50">
+              Pastikan KTM terlihat jelas, tidak blur, dan NIM dapat terbaca oleh sistem AI OCR.
+            </p>
+          </div>
+
+          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+            <h3 className="text-xl font-black text-slate-950">Tahapan Verifikasi</h3>
+
+            <div className="mt-6 space-y-5">
+              {[
+                ['1', 'Upload KTM', 'Ambil foto atau upload gambar KTM.'],
+                ['2', 'AI OCR Validation', 'Sistem membaca Telkom dan NIM.'],
+                ['3', 'Review Admin', 'Admin dapat melakukan validasi manual.'],
+                ['4', 'Affiliate Aktif', 'Role berubah menjadi member affiliate.'],
+              ].map(([num, title, desc]) => (
+                <div key={num} className="flex gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-sm font-black text-orange-600 border border-orange-100">
+                    {num}
+                  </div>
+                  <div>
+                    <p className="font-black text-slate-900">{title}</p>
+                    <p className="mt-1 text-sm text-slate-500">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    {step === 'SCANNING' && (
+      <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-3 rounded-[2.5rem] border border-slate-100 bg-white p-6 md:p-7 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-500">
+                Step 1
+              </p>
+              <h2 className="text-2xl font-black text-slate-950">
+                Verifikasi KTM
+              </h2>
+            </div>
+
+            <span className="rounded-full bg-orange-50 px-4 py-2 text-xs font-black text-orange-600 border border-orange-100">
+              AI OCR
+            </span>
+          </div>
+
+          <div className="relative aspect-[4/3] bg-black rounded-[2rem] overflow-hidden shadow-inner border border-slate-100">
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              videoConstraints={{
+                width: 1280,
+                height: 720,
+                facingMode: 'environment',
+              }}
+              className="w-full h-full object-cover"
+            />
+
+            <div className="absolute inset-0 border-2 border-dashed border-white/30 m-10 rounded-3xl pointer-events-none flex items-center justify-center">
+              <p className="text-white/60 text-xs font-black uppercase tracking-[0.22em]">
+                Posisikan KTM di sini
               </p>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-2">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-600 shadow-sm">
-                  <CheckCircle size={20} />
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button
+              onClick={capture}
+              className="py-4 bg-orange-600 text-white rounded-2xl font-black text-base flex items-center justify-center shadow-xl shadow-orange-100 hover:bg-orange-700 transition active:scale-95"
+            >
+              <Camera size={22} className="mr-3" />
+              Ambil Foto
+            </button>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="py-4 bg-white text-orange-600 border-2 border-orange-600 rounded-2xl font-black text-base flex items-center justify-center hover:bg-orange-50 transition active:scale-95"
+            >
+              <Upload size={22} className="mr-3" />
+              Upload Foto
+            </button>
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+        </div>
+
+        <aside className="xl:col-span-2 space-y-6">
+          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+            <h3 className="text-xl font-black text-slate-950">Tips Foto KTM</h3>
+            <div className="mt-5 space-y-4">
+              {[
+                'Pastikan KTM terkena cahaya cukup.',
+                'NIM dan logo Telkom University harus terlihat jelas.',
+                'Hindari foto blur atau terlalu miring.',
+                'Gunakan KTM aktif milik akun yang sedang login.',
+              ].map((tip) => (
+                <div key={tip} className="flex gap-3">
+                  <CheckCircle size={18} className="mt-0.5 text-emerald-500 shrink-0" />
+                  <p className="text-sm font-semibold text-slate-600">{tip}</p>
                 </div>
-                <h3 className="font-bold text-slate-900">Komisi Tinggi</h3>
-                <p className="text-xs text-slate-500">Dapatkan hingga 10% dari setiap transaksi referral Anda.</p>
-              </div>
-              <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 space-y-2">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-orange-600 shadow-sm">
-                  <Sparkles size={20} />
-                </div>
-                <h3 className="font-bold text-slate-900">AI Insight</h3>
-                <p className="text-xs text-slate-500">Pantau performa jaringan Anda dengan bantuan AI cerdas.</p>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <button
-                onClick={() => setStep('SCANNING')}
-                className="w-full py-5 bg-orange-600 text-white rounded-2xl font-bold text-lg flex items-center justify-center shadow-lg shadow-orange-100 hover:bg-orange-700 transition-all active:scale-95"
-              >
-                Mulai Verifikasi Sekarang
-                <ArrowLeft className="ml-2 rotate-180" size={20} />
-              </button>
-              <p className="text-center text-[10px] text-slate-400 mt-4 uppercase tracking-widest font-bold">Memerlukan KTM Telkom University Aktif</p>
+              ))}
             </div>
           </div>
-        )}
 
-        {step === 'SCANNING' && (
-          <div className="p-8 space-y-6">
-            <div className="relative aspect-[4/3] bg-black rounded-3xl overflow-hidden shadow-inner border-4 border-slate-50">
-              <Webcam
-                audio={false}
-                ref={webcamRef}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{
-                  width: 1280,
-                  height: 720,
-                  facingMode: "environment"
-                }}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 border-2 border-dashed border-white/30 m-12 rounded-2xl pointer-events-none flex items-center justify-center">
-                <p className="text-white/50 text-xs font-bold uppercase tracking-widest">Posisikan KTM di sini</p>
-              </div>
-            </div>
-            
-            <div className="text-center space-y-4">
-              <p className="text-sm text-slate-500 font-medium">Pastikan pencahayaan cukup dan data pada KTM terbaca jelas oleh AI kami.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={capture}
-                  className="py-5 bg-orange-600 text-white rounded-2xl font-bold text-lg flex items-center justify-center shadow-lg shadow-orange-100 hover:bg-orange-700 transition-all active:scale-95"
-                >
-                  <Camera size={24} className="mr-3" />
-                  Ambil Foto
-                </button>
-                
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="py-5 bg-white text-orange-600 border-2 border-orange-600 rounded-2xl font-bold text-lg flex items-center justify-center hover:bg-orange-50 transition-all active:scale-95"
-                >
-                  <Upload size={24} className="mr-3" />
-                  Upload Foto
-                </button>
-              </div>
-
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleFileChange} 
-              />
-            </div>
-          </div>
-        )}
-
-        {step === 'PREVIEW' && (
-          <div className="p-8 space-y-6">
-            <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-lg border-4 border-orange-100">
-              <img src={ktmImage!} alt="KTM Preview" className="w-full h-full object-cover" />
-              {isVerifying && (
-                <div className="absolute inset-0 bg-orange-600/80 backdrop-blur-sm flex flex-col items-center justify-center text-white p-8 text-center">
-                  <RefreshCw size={48} className="animate-spin mb-4" />
-                  <p className="text-xl font-bold mb-2">Memproses Verifikasi...</p>
-                  <p className="text-sm opacity-80">Sistem sedang memvalidasi KTM Telkom University.</p>
-                </div>
-              )}
-            </div>
-
-            {verificationStatus && (
-              <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start space-x-3 text-emerald-700">
-                <CheckCircle size={20} className="shrink-0 mt-0.5" />
-                <p className="text-sm font-bold whitespace-pre-line">{verificationStatus}</p>
-              </div>
-            )}
-
-            {error && (
-              <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start space-x-3 text-rose-600">
-                <AlertCircle size={20} className="shrink-0 mt-0.5" />
-                <p className="text-sm font-bold">{error}</p>
-              </div>
-            )}
-
-            {!isVerifying && (
-              <div className="grid grid-cols-1 gap-4">
-                <button
-                  onClick={() => {
-                    setVerificationStatus(null);
-                    setError(null);
-                    setKtmFile(null);
-                    setStep('SCANNING');
-                  }}
-                  className="py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
-                >
-                  Foto Ulang
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {step !== 'INTRO' && (
-        <div className="bg-orange-50 rounded-3xl p-6 border border-orange-100 flex items-start space-x-4">
-          <div className="p-2 bg-orange-100 rounded-xl text-orange-600">
-            <CheckCircle size={24} />
-          </div>
-          <div>
-            <h3 className="font-bold text-orange-900">Keuntungan Afiliasi</h3>
-            <ul className="text-sm text-orange-800/70 mt-1 space-y-1">
+          <div className="rounded-[2.5rem] border border-orange-100 bg-orange-50 p-7">
+            <h3 className="font-black text-orange-900">Keuntungan Afiliasi</h3>
+            <ul className="mt-3 space-y-2 text-sm text-orange-800/80">
               <li>• Komisi hingga 10% dari setiap transaksi referral</li>
               <li>• Dashboard bisnis eksklusif & AI Insight</li>
               <li>• Reward khusus partner Telkom University</li>
             </ul>
           </div>
+        </aside>
+      </section>
+    )}
+
+    {step === 'PREVIEW' && (
+      <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-3 rounded-[2.5rem] border border-slate-100 bg-white p-6 md:p-7 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+          <div className="mb-5">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-500">
+              Preview KTM
+            </p>
+            <h2 className="text-2xl font-black text-slate-950">
+              Hasil Foto KTM
+            </h2>
+          </div>
+
+          <div className="relative aspect-[4/3] rounded-[2rem] overflow-hidden shadow-lg border border-orange-100">
+            <img src={ktmImage!} alt="KTM Preview" className="w-full h-full object-cover" />
+
+            {isVerifying && (
+              <div className="absolute inset-0 bg-orange-600/85 backdrop-blur-sm flex flex-col items-center justify-center text-white p-8 text-center">
+                <RefreshCw size={48} className="animate-spin mb-4" />
+                <p className="text-xl font-black mb-2">Memproses Verifikasi...</p>
+                <p className="text-sm opacity-90">
+                  Sistem sedang memvalidasi KTM Telkom University.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {!isVerifying && (
+            <button
+              onClick={() => {
+                setVerificationStatus(null);
+                setError(null);
+                setKtmFile(null);
+                setStep('SCANNING');
+              }}
+              className="mt-5 w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all"
+            >
+              Foto Ulang
+            </button>
+          )}
         </div>
-      )}
-    </div>
+
+        <aside className="xl:col-span-2 space-y-6">
+          <div className="rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+            <h3 className="text-xl font-black text-slate-950">Hasil Verifikasi</h3>
+
+            {verificationStatus && (
+              <div className="mt-5 rounded-3xl bg-emerald-50 border border-emerald-100 p-5 flex items-start gap-3 text-emerald-700">
+                <CheckCircle size={22} className="shrink-0 mt-0.5" />
+                <p className="text-sm font-black whitespace-pre-line">{verificationStatus}</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-5 rounded-3xl bg-rose-50 border border-rose-100 p-5 flex items-start gap-3 text-rose-600">
+                <AlertCircle size={22} className="shrink-0 mt-0.5" />
+                <p className="text-sm font-black">{error}</p>
+              </div>
+            )}
+
+            {!verificationStatus && !error && !isVerifying && (
+              <div className="mt-5 rounded-3xl bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                Hasil verifikasi akan muncul setelah KTM diproses oleh sistem AI OCR.
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-[2.5rem] border border-orange-100 bg-orange-50 p-7">
+            <h3 className="font-black text-orange-900">Catatan</h3>
+            <p className="mt-2 text-sm leading-relaxed text-orange-800/80">
+              Jika hasil OCR gagal, data tetap dapat masuk antrean review dan admin dapat
+              melakukan approval manual melalui halaman Verifikasi KTM.
+            </p>
+          </div>
+        </aside>
+      </section>
+    )}
+  </div>
+
   );
 };
 

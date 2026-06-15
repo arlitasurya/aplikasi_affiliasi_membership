@@ -209,269 +209,288 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
       ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200">
-      <header className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard Afiliasi</h1>
-          <div className="flex items-center space-x-3 mt-1">
-            <p className="text-slate-500">Pantau pertumbuhan jaringan dan komisi Anda.</p>
-            <span className="px-3 py-1 bg-orange-100 text-orange-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-orange-200">
-              AFFILIATE PARTNER
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100 shadow-sm">
-          <QrCode size={18} className="mr-2" />
-          <p className="text-xs font-bold">QR Member untuk kasir ada di <span className="underline">Profil Afiliasi</span></p>
-        </div>
-      </header>
+  <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 space-y-8 animate-in fade-in duration-300">
+    <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-orange-500">
+          Affiliate Business Center
+        </p>
+        <h1 className="mt-2 text-3xl md:text-4xl font-black text-slate-950">
+          Dashboard Afiliasi
+        </h1>
+        <p className="mt-1 text-slate-500">
+          Pantau jaringan referral, komisi, dan performa afiliasi Anda.
+        </p>
+      </div>
 
-      {/* Top Section Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column: Main Referral Card & CTA */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {/* Main Referral Card (Matching Image) */}
-          <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden h-fit">
-            <div className="grid grid-cols-1 md:grid-cols-10 h-full">
-              {/* Left Side: Referral Info */}
-              <div className="md:col-span-6 p-8 md:p-10 flex flex-col justify-between space-y-8">
-                <div>
-                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">KODE REFERRAL ANDA</p>
-                  <div className="flex items-center space-x-4">
-                    <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
-                      {user.referralCode || 'NGOLAB-' + user.id.substring(0, 4).toUpperCase()}
-                    </h2>
-                    <button 
-                      onClick={handleCopy}
-                      className="p-3 bg-orange-50 text-orange-600 rounded-2xl hover:bg-orange-100 transition-all border border-orange-100 shadow-sm"
-                      title="Salin Kode"
-                    >
-                      {copied ? <CheckCircle size={24} className="text-orange-500" /> : <Copy size={24} />}
-                    </button>
-                  </div>
-                </div>
+      <div className="inline-flex w-fit items-center rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs font-black text-orange-600">
+        <QrCode size={17} className="mr-2" />
+        QR Member tersedia di Profil Afiliasi
+      </div>
+    </header>
 
-                <button 
-                  onClick={handleShare}
-                  className="flex items-center justify-center bg-orange-600 text-white px-8 py-4 rounded-2xl font-black text-lg shadow-lg shadow-orange-200 hover:bg-orange-700 transition-all w-full md:w-fit"
-                >
-                  <Share2 className="mr-3" size={20} /> Bagikan Kode
-                </button>
-              </div>
+    {/* Hero */}
+    <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      <div className="xl:col-span-3 rounded-[2.5rem] overflow-hidden border border-slate-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div className="grid grid-cols-1 md:grid-cols-5">
+          <div className="md:col-span-3 p-7 md:p-9">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
+              Kode Referral Anda
+            </p>
 
-              {/* Right Side: Stats (Orange Section) */}
-              <div className="md:col-span-4 bg-gradient-to-br from-orange-500 to-orange-600 p-8 md:p-10 text-white flex flex-col justify-center items-center text-center relative overflow-hidden">
-                <div className="relative z-10 space-y-8 w-full">
-                  <div>
-                    <p className="text-orange-100/70 text-[10px] font-black uppercase tracking-[0.2em] mb-2">TOTAL SALDO POIN</p>
-                    <p className="text-4xl font-black">{overallPoints.toLocaleString()} <span className="text-sm font-bold opacity-80 uppercase tracking-tighter">PTS</span></p>
-                    <p className="text-[10px] font-bold text-orange-100/60 mt-1 uppercase tracking-widest">Gabungan Member & Afiliasi</p>
-                  </div>
-                  
-                  <div className="pt-6 border-t border-white/10 space-y-4 text-left">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Users size={14} className="text-orange-200" />
-                        <span className="text-[10px] font-bold text-orange-100/80 uppercase">Total Referral</span>
-                      </div>
-                      <span className="font-black text-sm">{totalDownlines} Member</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Star size={14} className="text-orange-200" />
-                        <span className="text-[10px] font-bold text-orange-100/80 uppercase">Poin Komisi</span>
-                      </div>
-                      <span className="font-black text-sm">{(networkStats.commission || user.commissionPoints || 0).toLocaleString()} PTS</span>
-                    </div>
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-950 break-all">
+                {user.referralCode || 'NGOLAB-' + user.id.substring(0, 4).toUpperCase()}
+              </h2>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Wallet size={14} className="text-orange-200" />
-                        <span className="text-[10px] font-bold text-orange-100/80 uppercase">Poin Cashback</span>
-                      </div>
-                      <span className="font-black text-sm">{(networkStats.cashback || user.cashbackPoints || 0).toLocaleString()} PTS</span>
-                    </div>
-                  </div>
-                </div>
-                <Wallet className="absolute -right-8 -bottom-8 text-white/10 w-40 h-40 transform -rotate-12" />
-              </div>
+              <button
+                onClick={handleCopy}
+                className="h-13 w-13 shrink-0 rounded-2xl border border-orange-100 bg-orange-50 text-orange-600 flex items-center justify-center hover:bg-orange-100 transition"
+              >
+                {copied ? <CheckCircle size={24} /> : <Copy size={24} />}
+              </button>
             </div>
-          </div>
 
-          {/* New CTA Card: Mini-Game Promotion */}
-          <div className="bg-gradient-to-r from-orange-50 to-white rounded-3xl p-4 border border-orange-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 group hover:shadow-md transition-all">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-2xl text-orange-600 shadow-sm group-hover:scale-110 transition-transform">
-                <Gamepad2 size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 leading-tight">Kumpulkan Lebih Banyak Ngolab Poin!</h3>
-                <p className="text-xs text-slate-500 leading-tight mt-0.5">
-                  Mainkan mini-game seru di ekosistem utama kami dan dapatkan tambahan poin untuk ditukar dengan makanan.
-                </p>
-              </div>
-            </div>
-            <button className="bg-orange-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-orange-700 transition-all shadow-lg shadow-orange-200 whitespace-nowrap">
-              Main Sekarang 🎮
+            <p className="mt-4 text-sm leading-relaxed text-slate-500">
+              Bagikan kode referral ini kepada pelanggan baru untuk membangun jaringan dan memperoleh komisi.
+            </p>
+
+            <button
+              onClick={handleShare}
+              className="mt-7 inline-flex items-center justify-center rounded-2xl bg-orange-600 px-7 py-4 text-sm font-black text-white shadow-xl shadow-orange-100 hover:bg-orange-700 transition"
+            >
+              <Share2 className="mr-3" size={20} />
+              Bagikan Kode
             </button>
           </div>
-        </div>
 
-        {/* Right Column: Level Cards Stack */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          {/* Affiliate Level Card */}
-          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-2xl bg-orange-100 text-orange-600">
-                <Trophy size={24} />
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LEVEL AFILIASI</p>
-                <p className="text-xl font-black text-slate-900">{currentLevel ? currentLevel.name : 'Starter'}</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1">PROGRES LEVEL</p>
-                  <p className="text-[10px] font-bold text-slate-500 leading-tight">{progressText}</p>
-                </div>
-                <p className="text-2xl font-black text-slate-900">{progressPercent}%</p>
-              </div>
-              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                <div 
-                  className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-1000" 
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
-          </div>
+          <div className="md:col-span-2 bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 p-7 text-white relative overflow-hidden">
+            <Wallet className="absolute -right-10 -bottom-10 h-40 w-40 text-white/10 -rotate-12" />
 
-          {/* Member Level Card */}
-          <div className={`rounded-[2rem] p-6 border flex flex-col justify-between relative shadow-sm hover:shadow-md transition-all overflow-hidden group ${levelConfig.cardBg}`}>
-            <div className="flex justify-between items-center relative z-10">
+            <div className="relative z-10 space-y-7">
               <div>
-                <p className={`text-[10px] font-black uppercase tracking-[0.15em] mb-1 ${levelConfig.titleColor}`}>
-                  LEVEL MEMBER
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-100">
+                  Total Saldo Poin
                 </p>
-                <p className={`text-3xl font-black uppercase tracking-wider ${levelConfig.levelColor}`}>
-                  {user.level || 'SILVER'}
+                <p className="mt-2 text-4xl font-black">
+                  {overallPoints.toLocaleString()}
+                  <span className="ml-1 text-sm">PTS</span>
+                </p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-orange-100/70">
+                  Gabungan member & afiliasi
                 </p>
               </div>
-              <div className={levelConfig.iconColor}>
-                <Crown size={48} fill="currentColor" className="drop-shadow-md" />
+
+              <div className="space-y-4 border-t border-white/15 pt-5">
+                <div className="flex justify-between text-sm">
+                  <span className="font-bold text-orange-100">Total Referral</span>
+                  <span className="font-black">{totalDownlines} Member</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-bold text-orange-100">Poin Komisi</span>
+                  <span className="font-black">
+                    {(networkStats.commission || user.commissionPoints || 0).toLocaleString()} PTS
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-bold text-orange-100">Poin Cashback</span>
+                  <span className="font-black">
+                    {(networkStats.cashback || user.cashbackPoints || 0).toLocaleString()} PTS
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            <div className="relative z-10 mt-6">
-              {!isGold ? (
-                <div className="space-y-2">
-                  <div className={`w-full h-2 rounded-full overflow-hidden border ${levelConfig.progressContainer}`}>
-                    <div className={`h-full rounded-full transition-all duration-1000 ${levelConfig.progressBar}`} style={{ width: '75%' }}></div>
-                  </div>
-                  <p className={`text-[10px] font-bold uppercase tracking-tighter ${levelConfig.progressText}`}>
-                    75% Menuju Level Gold
-                  </p>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  {[1, 2, 3].map(i => <Star key={i} size={14} fill="white" className="text-white" />)}
-                  <p className="text-[10px] font-bold uppercase tracking-tighter text-white">Level Maksimal Tercapai</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="space-y-8">
-        {/* AI Business Insight */}
-        <section className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm">
-          <div className="flex items-center space-x-2 text-slate-900 font-bold mb-4">
-            <Sparkles className="text-orange-600" size={20} />
-            <h2 className="text-lg">✨ Ngolab AI Business Insight</h2>
-          </div>
-          <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 relative overflow-hidden p-6">
-            <div className="relative z-10">
-              <div className="flex items-center space-x-2 text-orange-400 font-bold mb-3">
-                <Lightbulb size={18} />
-                <span className="text-sm">Analisis Performa Referral</span>
-              </div>
-              <div className="space-y-3">
-<p className="text-slate-200 text-sm leading-relaxed font-medium italic">
-                   "{aiInsights?.ai_recommendation || businessInsight}"
-                 </p>
-                <div className="p-3 bg-white/5 rounded-xl border border-white/10">
-                  <p className="text-orange-400 text-[9px] font-black uppercase tracking-widest mb-1">Strategi Rekomendasi</p>
-                  <p className="text-slate-300 text-xs">{aiStrategy}</p>
-                </div>
-              </div>
-            </div>
-            <TrendingUp className="absolute -right-6 -bottom-6 text-white/5 w-32 h-32 transform -rotate-12" />
-          </Card>
-        </section>
+      {/* Level Cards */}
+     {/* Combined Level Card */}
+<div className="xl:col-span-2">
+  <div className="rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+    <div className="mb-6 flex items-center justify-between">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-500">
+          Status Akun
+        </p>
+        <h3 className="mt-1 text-2xl font-black text-slate-950">
+          Member & Affiliate
+        </h3>
+      </div>
 
-        {/* Points History Section */}
-        <section>
-          <div className="flex items-center mb-6">
-            <div className="p-2 bg-orange-50 rounded-lg text-orange-600 mr-3">
-              <History size={20} />
-            </div>
-            <h2 className="text-xl font-bold text-slate-800">Riwayat Poin Pemasukan (Global)</h2>
-          </div>
-          
-          <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden text-left">
-            <div className="divide-y divide-slate-50">
-              {pointHistory.map((log) => (
-                <div key={log.id} className="p-5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-2.5 rounded-xl ${log.type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                      {log.type === 'IN' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm">{log.source}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                        {new Date(log.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-black ${log.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {log.type === 'IN' ? '+' : '-'}{log.amount.toLocaleString()}
-                    </p>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">NGOLAB POIN</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {pointHistory.length === 0 && (
-              <div className="p-12 text-center">
-                <History size={48} className="mx-auto text-slate-200 mb-3" />
-                <p className="text-slate-400 font-medium">Belum ada riwayat poin.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Transactions Section */}
-        <section className="w-full">
-          <div className="flex items-center mb-6">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center">
-              <TrendingUp className="mr-2 text-orange-600" size={24} />
-              Akumulasi Transaksi Downline
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-            {MOCK_MENU.map(menu => (
-              <MenuRecommendationCard key={menu.id} menu={menu} />
-            ))}
-          </div>
-        </section>
+      <div className="h-14 w-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center">
+        <Trophy size={27} />
       </div>
     </div>
+
+    <div className="space-y-7">
+      <div>
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Level Afiliasi
+            </p>
+            <p className="mt-1 text-3xl font-black text-slate-950">
+              {currentLevel ? currentLevel.name : 'Starter'}
+            </p>
+          </div>
+
+          <p className="text-3xl font-black text-orange-600">
+            {progressPercent}%
+          </p>
+        </div>
+
+        <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <p className="mt-2 text-xs font-bold text-slate-500">
+          {progressText}
+        </p>
+      </div>
+
+      <div className="rounded-3xl bg-slate-50 p-5">
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Level Member
+            </p>
+            <p className="mt-1 text-3xl font-black text-slate-800 uppercase">
+              {user.level || 'SILVER'}
+            </p>
+          </div>
+
+          <Crown size={44} fill="currentColor" className="text-slate-300" />
+        </div>
+
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+          <div className="h-full w-3/4 rounded-full bg-slate-500" />
+        </div>
+
+        <p className="mt-2 text-[10px] font-black uppercase text-slate-500">
+          75% menuju level Gold
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+    {/* Game CTA */}
+    <section className="rounded-[1.8rem] border border-orange-100 bg-white p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <div className="h-14 w-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center">
+          <Gamepad2 size={26} />
+        </div>
+        <div>
+          <h3 className="font-black text-slate-900">Kumpulkan Lebih Banyak Ngolab Poin!</h3>
+          <p className="text-sm text-slate-500">
+            Mainkan mini-game dan dapatkan tambahan poin untuk ditukar dengan makanan.
+          </p>
+        </div>
+      </div>
+      <button className="rounded-2xl bg-orange-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-orange-100">
+        Main Sekarang 🎮
+      </button>
+    </section>
+
+    {/* AI Insight */}
+    <section className="rounded-[2.2rem] border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-7 shadow-sm relative overflow-hidden">
+      <Sparkles className="absolute right-8 top-8 h-28 w-28 text-orange-100" />
+
+      <div className="relative z-10">
+        <div className="flex items-center gap-2 text-orange-600 font-black">
+          <Sparkles size={22} />
+          <h2>Ngolab AI Business Insight</h2>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div className="rounded-3xl bg-white border border-orange-100 p-5">
+            <div className="flex items-center gap-2 text-orange-600 font-black text-sm">
+              <Lightbulb size={18} />
+              Analisis Performa Referral
+            </div>
+            <p className="mt-4 text-sm leading-relaxed font-semibold text-slate-700 italic">
+             {(aiInsights as any)?.ai_recommendation || (aiInsights as any)?.message || businessInsight}
+            </p>
+          </div>
+
+          <div className="rounded-3xl bg-white border border-orange-100 p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+              Strategi Rekomendasi
+            </p>
+            <p className="mt-3 text-sm leading-relaxed font-semibold text-slate-600">
+              {(aiInsights as any)?.message || aiStrategy}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* Point History */}
+    <section>
+      <div className="mb-5 flex items-center gap-2">
+        <History size={22} className="text-orange-600" />
+        <h2 className="text-xl font-black text-slate-900">
+          Riwayat Poin Pemasukan
+        </h2>
+      </div>
+
+      <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
+        <div className="divide-y divide-slate-100">
+          {pointHistory.map((log) => (
+            <div key={log.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition">
+              <div className="flex items-center gap-4">
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
+                  log.type === 'IN' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                }`}>
+                  {log.type === 'IN' ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                </div>
+                <div>
+                  <p className="font-black text-sm text-slate-900">{log.source}</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {new Date(log.date).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <p className={`font-black ${log.type === 'IN' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {log.type === 'IN' ? '+' : '-'}{log.amount.toLocaleString()}
+                </p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-300">
+                  Ngolab Poin
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Downline Transactions */}
+    <section>
+      <div className="mb-5 flex items-center gap-2">
+        <TrendingUp size={23} className="text-orange-600" />
+        <h2 className="text-xl font-black text-slate-900">
+          Akumulasi Transaksi Downline
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {MOCK_MENU.map((menu) => (
+          <MenuRecommendationCard key={menu.id} menu={menu} />
+        ))}
+      </div>
+    </section>
+  </div>
   );
 };
 

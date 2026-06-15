@@ -322,7 +322,7 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">KONFIRMASI KATA SANDI BARU</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">KONFIRMASI SANDI BARU</label>
               <input 
                 required
                 type="password" 
@@ -376,142 +376,220 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[3.5rem] shadow-2xl shadow-slate-100 p-10 md:p-16 border border-slate-50">
-        
-        {/* Page Title */}
-        <div className="mb-10">
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            {user.role === UserRole.MEMBER ? 'Profil Saya' : 'Profil'}
-          </h2>
-        </div>
-
-        {/* Profile Header Section */}
-        <div className="flex flex-col md:flex-row items-center gap-8 mb-12 pb-12 border-b border-slate-100">
-          <div className="relative group">
-            <div className="w-32 h-32 rounded-[2.5rem] bg-orange-100 flex items-center justify-center overflow-hidden border-4 border-white shadow-xl">
-              <img 
-                src={avatarUrl} 
-                alt={displayName}
-                className="w-full h-full object-cover"
-              />
+  <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 animate-in fade-in duration-300">
+    {/* Profile Hero */}
+    <section className="rounded-[2.5rem] border border-slate-100 bg-white p-6 md:p-8 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div className="flex flex-col sm:flex-row items-center sm:items-center gap-6 text-center sm:text-left">
+          <div className="relative">
+            <div className="h-28 w-28 rounded-[2rem] bg-gradient-to-br from-orange-500 to-amber-500 p-1 shadow-xl shadow-orange-100">
+              <div className="h-full w-full rounded-[1.7rem] overflow-hidden bg-white">
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="h-full w-full object-cover"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="text-center md:text-left flex-1">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">{displayName}</h1>
-              {user.role === UserRole.MEMBER_AFFILIATE && (
-                <span className="w-fit px-3 py-1 bg-orange-100/50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border border-orange-100">
-                  MEMBER AFFILIATE • ACTIVE
-                </span>
-              )}
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
+                {displayName}
+              </h1>
+
+              <span className="w-fit mx-auto sm:mx-0 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-orange-600">
+                {user.role === UserRole.MEMBER_AFFILIATE
+                  ? 'Member Affiliate'
+                  : 'Member'}
+              </span>
             </div>
-            <div className="flex flex-wrap justify-center md:justify-start gap-5 text-slate-500 font-bold text-sm">
-              <div className="flex items-center gap-2">
-                <Mail size={16} className="text-slate-300" />
+
+            <div className="mt-4 flex flex-wrap justify-center sm:justify-start gap-3 text-sm font-semibold text-slate-500">
+              <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2">
+                <Mail size={15} className="text-slate-400" />
                 {user.email}
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone size={16} className="text-slate-300" />
+              </span>
+
+              <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-2">
+                <Phone size={15} className="text-slate-400" />
                 {user.phone_number || user.phone || 'Belum ada nomor telepon'}
-              </div>
+              </span>
             </div>
           </div>
-
-          <button 
-            onClick={() => {
-              setEditForm({ name: user.username || user.name, phone: user.phone_number || user.phone || '', nim: user.nim || '', photoURL: user.photoURL });
-              setView('EDIT');
-            }}
-            className="px-8 py-3.5 bg-orange-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-orange-100 hover:bg-orange-700 hover:-translate-y-0.5 transition-all"
-          >
-            Edit Profil
-          </button>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-16">
-          <div className="flex-1 space-y-10">
-            <div className="flex items-center space-x-3 mb-8">
-              <div className="w-1.5 h-8 bg-slate-900 rounded-full"></div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Database ID</h2>
-            </div>
+        <button
+          onClick={() => {
+            setEditForm({
+              name: user.username || user.name,
+              phone: user.phone_number || user.phone || '',
+              nim: user.nim || '',
+              photoURL: user.photoURL,
+            });
+            setView('EDIT');
+          }}
+          className="rounded-2xl bg-orange-600 px-7 py-3.5 text-sm font-black text-white shadow-xl shadow-orange-100 hover:bg-orange-700 transition"
+        >
+          Edit Profil
+        </button>
+      </div>
+    </section>
 
-            <div className="space-y-8">
-<div>
-                <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2">
-                  QR Code Member
-                </p>
-                <div className="flex items-center gap-6">
-                  <div className="p-3 bg-white border-4 border-slate-50 rounded-2xl shadow-sm">
- {user?.id ? (
-  <QRCode value={String(user.id)} size={120} />
-) : (
-  <div style={{ width: 120, height: 120, backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, fontSize: 12, color: '#9ca3af' }}>
-    Memuat QR...
-  </div>
-)}
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black text-slate-900 uppercase">
-                      {String(user?.id || 'N/A')}
-                    </p>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ID UNIK MEMBER NGOLABHUB</p>
-                   </div>
-                </div>
-              </div>
+    {/* Main Profile Content */}
+    <section className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* QR Membership */}
+      <div className="lg:col-span-1 rounded-[2.2rem] border border-slate-100 bg-white p-7 shadow-sm">
+        <div className="mb-5">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
+            QR Code Member
+          </p>
+          <h2 className="mt-2 text-2xl font-black text-slate-950">
+            Scan di Kasir
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Tunjukkan QR saat melakukan transaksi.
+          </p>
+        </div>
 
-              {user.role === UserRole.MEMBER_AFFILIATE && (
-                <div>
-                  <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2">KODE REFERAL AFILIASI</p>
-                  <div className="flex items-center gap-3">
-                    <p className="text-2xl font-black text-orange-600 uppercase">
-                      {user.referralCode || 'NGOLAB-XXXX'}
-                    </p>
-                    <button 
-                      onClick={handleCopyCode}
-                      className="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-all"
-                      title="Salin Kode"
-                    >
-                      {isCopied ? <CheckCircle size={18} /> : <Copy size={18} />}
-                    </button>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">BAGIKAN KODE UNTUK KOMISI</p>
+        <div className="flex justify-center">
+          <div className="rounded-[2rem] border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-5 shadow-inner">
+            <div className="rounded-2xl bg-white p-3 shadow-sm">
+              {user?.id ? (
+                <QRCode value={String(user.id)} size={150} />
+              ) : (
+                <div className="h-[150px] w-[150px] rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">
+                  Memuat QR...
                 </div>
               )}
-
-              <div>
-                <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2">UPLINE PERMANEN</p>
-                <p className={`text-2xl font-black ${(user.referredBy || user.referred_by) ? 'text-slate-900' : 'text-slate-400'}`}>
-                  {user.referredBy || user.referred_by || '-'}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2">MEMBERSHIP LEVEL</p>
-                <p className="text-2xl font-black text-slate-900">
-                  {user.level || 'SILVER'}
-                </p>
-              </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex-1 space-y-10">
-            <div className="flex items-center space-x-3 mb-8">
-              <div className="w-1.5 h-8 bg-orange-100 rounded-full"></div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Pengaturan Akun</h2>
-            </div>
-
-            <div className="space-y-2">
-              <SettingItem icon={Key} label="Ganti Kata Sandi" onClick={() => setView('PASSWORD')} />
-              <SettingItem icon={Headphones} label="Bantuan Support" onClick={() => setView('SUPPORT')} />
-              <SettingItem icon={HelpCircle} label="FAQ" onClick={() => setView('FAQ')} />
-            </div>
-          </div>
+        <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+            ID Member
+          </p>
+          <p className="mt-1 break-all font-black text-sm text-slate-900">
+            {String(user?.id || 'N/A')}
+          </p>
         </div>
       </div>
-    </div>
-  );
+
+      {/* Member Status */}
+      <div className="lg:col-span-2 space-y-6">
+        <div className="rounded-[2.2rem] border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-7 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
+                Membership Level
+              </p>
+              <h2 className="mt-2 text-3xl font-black text-slate-950">
+                {user.level || 'SILVER'} MEMBER
+              </h2>
+            </div>
+
+            <div className="h-14 w-14 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
+              <CheckCircle size={27} />
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="h-3 w-full rounded-full bg-slate-200 overflow-hidden">
+              <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
+            </div>
+
+            <div className="mt-3 flex justify-between text-xs font-bold text-slate-500">
+              <span>750 poin menuju level GOLD</span>
+              <span>750 / 1000</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Account Info */}
+        <div className="rounded-[2.2rem] border border-slate-100 bg-white p-7 shadow-sm">
+          <h2 className="text-xl font-black text-slate-950">
+            Informasi Member
+          </h2>
+
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Email
+              </p>
+              <p className="mt-1 font-bold text-slate-900 break-all">
+                {user.email}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Nomor Telepon
+              </p>
+              <p className="mt-1 font-bold text-slate-900">
+                {user.phone_number || user.phone || 'Belum tersedia'}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                NIM
+              </p>
+              <p className="mt-1 font-bold text-slate-900">
+                {user.nim || 'Belum tersedia'}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Upline Permanen
+              </p>
+              <p className="mt-1 font-bold text-slate-900">
+                {user.referredBy || user.referred_by || '-'}
+              </p>
+            </div>
+          </div>
+
+          {user.role === UserRole.MEMBER_AFFILIATE && (
+            <div className="mt-5 rounded-2xl border border-orange-100 bg-orange-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-orange-500">
+                Kode Referral Affiliate
+              </p>
+
+              <div className="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="font-black text-xl text-orange-600">
+                  {user.referralCode || 'NGOLAB-XXXX'}
+                </p>
+
+                <button
+                  onClick={handleCopyCode}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-black text-orange-600 shadow-sm hover:bg-orange-100 transition"
+                >
+                  {isCopied ? <CheckCircle size={17} /> : <Copy size={17} />}
+                  {isCopied ? 'Tersalin' : 'Salin Kode'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+
+    {/* Settings */}
+    <section className="mt-6 rounded-[2.2rem] border border-slate-100 bg-white p-7 shadow-sm">
+      <h2 className="text-xl font-black text-slate-950">
+        Pengaturan Akun
+      </h2>
+
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <SettingItem icon={Key} label="Ganti Kata Sandi" onClick={() => setView('PASSWORD')} />
+        <SettingItem icon={Headphones} label="Bantuan Support" onClick={() => setView('SUPPORT')} />
+        <SettingItem icon={HelpCircle} label="FAQ" onClick={() => setView('FAQ')} />
+      </div>
+    </section>
+  </div>
+);
 };
 
 export default Profile;
