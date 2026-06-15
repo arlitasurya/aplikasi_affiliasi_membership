@@ -72,7 +72,7 @@ const getAuthHeaders = (skipConnectionKey = false) => {
 /**
  * Central Backend API URL - untuk KYC verification (OCR processing)
  * Diambil dari .env file: VITE_CENTRAL_API_URL
-  * Default: http://192.168.110.127:4000 (jika tidak ada di .env)
+ * Default: http://10.20.112.75:4000 (jika tidak ada di .env)
  * 
  * Endpoint KYC: {CENTRAL_API_URL}/api/membership/affiliate/verify
  */

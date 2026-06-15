@@ -82,7 +82,7 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
 
       const verification = result.data?.verification || {};
       const ocrData = result.data?.ocr || {};
-      const status = verification.status || 'PENDING';
+      const status = result.status || verification.status || 'PENDING';
       
       console.log('📋 Verification Response:', { status, verification, ocr: ocrData });
 
@@ -117,10 +117,9 @@ const UpgradeAffiliate: React.FC<UpgradeAffiliateProps> = ({ user, onBack, onSuc
           // Call parent with upgraded user (role = MEMBER_AFFILIATE)
           onSuccess(acceptedUser);
           // Also sync role update with backend (non-blocking)
-          updateBackendRoleAsync(user.id);
         }, 1500);
       } else {
-        // PENDING or REJECTED by backend
+        // PENDING or REJECTED by backendS
         let statusMessage = '';
         
         if (status === 'PENDING') {
