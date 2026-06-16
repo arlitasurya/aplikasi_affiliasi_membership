@@ -151,15 +151,13 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
   return (
     <div className="min-h-screen bg-white flex">
       <section className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-amber-50">
+        <img
+        src="/kontainer ngolab.jpeg"
+        alt="Ngolab Express Container"
+        className="absolute inset-0 w-full h-full object-cover opacity-20"
+      />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(249,115,22,0.18),transparent_30%),radial-gradient(circle_at_80%_80%,rgba(251,191,36,0.22),transparent_32%)]" />
         <div className="relative z-10 flex min-h-screen w-full flex-col justify-between p-12 xl:p-16">
-          <button
-            onClick={onBack}
-            className="w-fit inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-slate-500 shadow-sm border border-slate-100 hover:text-orange-600 transition"
-          >
-            <ArrowLeft size={18} />
-            Kembali
-          </button>
 
           <div className="max-w-2xl">
             <div className="mb-10 flex items-center gap-3">
@@ -217,20 +215,17 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
       </section>
 
       <section className="flex min-h-screen flex-1 items-center justify-center bg-white px-6 py-10">
-        <div className="w-full max-w-lg">
-          <button
-            onClick={onBack}
-            className="mb-8 inline-flex lg:hidden items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-semibold"
-          >
-            <ArrowLeft size={20} />
-            Kembali
-          </button>
+         <div className="w-full max-w-lg">
+        <button
+          onClick={onBack}
+          className="mb-8 flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-semibold"
+        >
+          <ArrowLeft size={20} />
+          Kembali
+        </button>
 
           <div className="rounded-[2.2rem] border border-slate-100 bg-white p-8 md:p-10 shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
-            <div className="mb-8">
-              <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-xl shadow-orange-100">
-                <Star fill="currentColor" size={28} />
-              </div>
+            <div className="mb-8">       
               <h1 className="text-3xl font-black text-slate-950">
                 Daftar Membership
               </h1>

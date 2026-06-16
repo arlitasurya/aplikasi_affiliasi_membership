@@ -22,16 +22,26 @@ const Landing: React.FC<LandingProps> = ({ onSelectRole, onLoginClick }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden">
       {/* Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-orange-600 font-bold text-2xl">
-            <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-100">
-              <Star fill="currentColor" size={24} />
-            </div>
-            <span className="tracking-tight">NgolabHub</span>
-          </div>
+          <div className="flex items-center space-x-3 mb-8">
+  <img
+    src="/ngolab-logo.png"
+    alt="Ngolab Express"
+    className="w-14 h-14 object-contain"
+  />
+
+  <div>
+    <h1 className="text-xl font-black text-slate-900 leading-tight">
+      Ngolab Express
+    </h1>
+    <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">
+      Member & Affiliate
+    </p>
+  </div>
+</div>
 
           <div className="flex items-center space-x-6">
             <button 

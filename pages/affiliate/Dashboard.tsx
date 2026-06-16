@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, UserRole, Transaction, MemberLevel } from '../../types';
 import Card from '../../components/Card';
 import { PlayGameCard, MenuRecommendationCard } from '../DashboardCommon';
-import { MOCK_MENU, API_BASE_URL } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 import { analyzeAffiliateGrowth, analyzeBusinessInsight } from '../../services/geminiService';
 import { getAffiliateNetwork } from '../../services/apiService';
 
@@ -37,6 +37,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
   const [businessInsight, setBusinessInsight] = useState<string>("Menunggu data analitik AI...");
   const [networkStats, setNetworkStats] = useState({ downlines: 0, commission: 0, cashback: 0, level: '' });
   const [aiInsights, setAiInsights] = useState<{ ai_recommendation?: string; favorite_category?: string; peak_visit_time?: string } | null>(null);
+  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
   // Fetch AI insights from backend endpoint
   useEffect(() => {
@@ -60,6 +61,23 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
     };
     fetchAiInsights();
   }, [user.id]);
+// Fetch recommended products from KIOSK
+useEffect(() => {
+  const fetchRecommendedProducts = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/membership/recommended-products`);
+      const result = await response.json();
+
+      if (result?.success) {
+        setRecommendedProducts(result.data || []);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil rekomendasi produk:', error);
+    }
+  };
+
+  fetchRecommendedProducts();
+}, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -232,7 +250,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
     {/* Hero */}
     <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
       <div className="xl:col-span-3 rounded-[2.5rem] overflow-hidden border border-slate-100 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-        <div className="grid grid-cols-1 md:grid-cols-5">
+        <div className="grid grid-cols-1 md:grid-cols-5 h-full items-stretch">
           <div className="md:col-span-3 p-7 md:p-9">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
               Kode Referral Anda
@@ -264,7 +282,7 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
             </button>
           </div>
 
-          <div className="md:col-span-2 bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 p-7 text-white relative overflow-hidden">
+          <div className="md:col-span-2 h-full self-stretch bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 p-7 text-white relative overflow-hidden flex flex-col justify-between">
             <Wallet className="absolute -right-10 -bottom-10 h-40 w-40 text-white/10 -rotate-12" />
 
             <div className="relative z-10 space-y-7">
@@ -480,15 +498,29 @@ const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ user, transacti
       <div className="mb-5 flex items-center gap-2">
         <TrendingUp size={23} className="text-orange-600" />
         <h2 className="text-xl font-black text-slate-900">
-          Akumulasi Transaksi Downline
+          Rekomendasi Produk
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        {MOCK_MENU.map((menu) => (
-          <MenuRecommendationCard key={menu.id} menu={menu} />
-        ))}
-      </div>
+    <div
+  className="flex gap-6 overflow-x-auto pb-4"
+  style={{
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+  }}
+  onWheel={(e) => {
+    e.currentTarget.scrollLeft += e.deltaY;
+  }}
+>
+  {recommendedProducts.map((menu) => (
+    <div
+      key={menu.id}
+      className="min-w-[320px] max-w-[320px] flex-shrink-0"
+    >
+      <MenuRecommendationCard menu={menu} />
+    </div>
+  ))}
+</div>
     </section>
   </div>
   );

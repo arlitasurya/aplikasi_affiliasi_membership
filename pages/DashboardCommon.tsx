@@ -26,7 +26,11 @@ export const PlayGameCard: React.FC = () => (
 export const MenuRecommendationCard: React.FC<{ menu: any }> = ({ menu }) => (
   <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all group">
     <div className="h-40 overflow-hidden relative">
-      <img src={menu.image} alt={menu.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+      <img
+  src={menu.image_url || menu.image}
+  alt={menu.name}
+  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+/>
       <div className="absolute top-2 right-2 bg-orange-600 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg">
         Promo
       </div>

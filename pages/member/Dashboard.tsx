@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Transaction, MemberLevel } from '../../types';
 import { MenuRecommendationCard } from '../DashboardCommon';
-import { API_BASE_URL, MOCK_MENU } from '../../constants';
+import { API_BASE_URL } from '../../constants';
 import QRCode from 'react-qr-code';
 import {
   TrendingUp,
@@ -25,6 +25,7 @@ interface MemberDashboardProps {
 
 const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
   const [aiAdvice, setAiAdvice] = useState<string>('Menganalisis pola belanja Anda...');
+  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -55,6 +56,22 @@ const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
       isMounted = false;
     };
   }, [user?.id]);
+useEffect(() => {
+  const fetchRecommendedProducts = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/membership/recommended-products`);
+      const result = await response.json();
+
+      if (result?.success) {
+        setRecommendedProducts(result.data || []);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil rekomendasi produk:', error);
+    }
+  };
+
+  fetchRecommendedProducts();
+}, []);
 
   const isGold = user.level === MemberLevel.GOLD;
   const overallPoints = (user.totalPoints || 0) + (user.cashbackPoints || 0);
@@ -400,11 +417,25 @@ const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            {MOCK_MENU.map((menu) => (
-              <MenuRecommendationCard key={menu.id} menu={menu} />
-            ))}
-          </div>
+         <div
+  className="flex gap-6 overflow-x-auto pb-4"
+  style={{
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+  }}
+  onWheel={(e) => {
+    e.currentTarget.scrollLeft += e.deltaY;
+  }}
+>
+  {recommendedProducts.map((menu) => (
+    <div
+      key={menu.id}
+      className="min-w-[320px] max-w-[320px] flex-shrink-0"
+    >
+      <MenuRecommendationCard menu={menu} />
+    </div>
+  ))}
+</div>
         </section>
 
         <footer className="border-t border-slate-100 py-7 text-center">

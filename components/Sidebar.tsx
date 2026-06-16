@@ -61,12 +61,22 @@ const Sidebar: React.FC<SidebarProps> = ({ role, activeTab, setActiveTab, onLogo
   return (
     <aside className="w-64 bg-white h-screen border-r border-slate-100 flex flex-col fixed left-0 top-0 z-50">
       <div className="p-6">
-        <div className="flex items-center space-x-2 text-orange-600 font-bold text-2xl mb-8">
-          <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center text-white">
-            <Star fill="currentColor" size={24} />
-          </div>
-          <span>NgolabHub</span>
-        </div>
+        <div className="flex items-center space-x-3 mb-8">
+  <img
+    src="/ngolab-logo.png"
+    alt="Ngolab Express"
+    className="w-14 h-14 object-contain"
+  />
+
+  <div>
+    <h1 className="text-xl font-black text-slate-900 leading-tight">
+      Ngolab Express
+    </h1>
+    <p className="text-[10px] font-black uppercase tracking-widest text-orange-500">
+      Member & Affiliate
+    </p>
+  </div>
+</div>
 
         <nav className="space-y-2">
           {links.map((link) => (

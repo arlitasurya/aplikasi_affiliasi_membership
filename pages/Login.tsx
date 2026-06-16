@@ -81,15 +81,20 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
     <div className="min-h-screen bg-white flex">
       {/* Left Branding */}
       <section className="hidden lg:flex lg:w-[58%] relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-amber-50">
+       <img
+  src="/kontainer ngolab.jpeg"
+  alt="Ngolab Express Container"
+  className="absolute inset-0 w-full h-full object-cover opacity-20"
+/>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(249,115,22,0.18),transparent_30%),radial-gradient(circle_at_80%_80%,rgba(251,191,36,0.22),transparent_32%)]" />
         <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-orange-200/40 blur-3xl" />
         <div className="absolute -left-20 bottom-10 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
 
         <div className="relative z-10 flex min-h-screen w-full flex-col justify-between p-12 xl:p-16">
-          <button
-            onClick={onBack}
-            className="w-fit inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-slate-500 shadow-sm border border-slate-100 hover:text-orange-600 transition"
-          >
+         <button
+  onClick={onBack}
+  className="mb-20 inline-flex lg:hidden items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-semibold"
+>
             <ArrowLeft size={18} />
             Kembali
           </button>
@@ -153,33 +158,19 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
       </section>
 
       {/* Right Login Form */}
-      <section className="flex min-h-screen flex-1 items-center justify-center bg-white px-6 py-10">
-        <div className="w-full max-w-md">
-          <button
-            onClick={onBack}
-            className="mb-8 inline-flex lg:hidden items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-semibold"
-          >
-            <ArrowLeft size={20} />
-            Kembali
-          </button>
+     <section className="flex min-h-screen flex-1 items-center justify-center bg-white px-6 py-10">
+  <div className="w-full max-w-md">
+    <button
+  onClick={onBack}
+  className="mb-8 flex items-center gap-2 text-slate-500 hover:text-orange-600 transition-colors font-semibold"
+>
+  <ArrowLeft size={20} />
+  Kembali
+</button>
 
-          <div className="lg:hidden mb-8 flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-orange-600 text-white flex items-center justify-center shadow-lg shadow-orange-100">
-              <Star fill="currentColor" size={26} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-orange-600">NgolabHub</h2>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
-                Membership & Affiliate
-              </p>
-            </div>
-          </div>
 
           <div className="rounded-[2.2rem] border border-slate-100 bg-white p-8 md:p-10 shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
             <div className="text-center mb-9">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-600 text-white rounded-2xl mb-5 shadow-xl shadow-orange-100">
-                <Star fill="currentColor" size={32} />
-              </div>
               <h1 className="text-3xl font-black text-slate-950">
                 Selamat Datang
               </h1>
