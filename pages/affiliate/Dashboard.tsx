@@ -24,6 +24,7 @@ import {
   History,
   ArrowDownLeft,
   ArrowUpRight
+
 } from 'lucide-react';
 
 interface AffiliateDashboardProps {
@@ -218,13 +219,17 @@ useEffect(() => {
   // LOGIKA SALDO POIN GABUNGAN
   const overallPoints = (user.totalPoints || 0) + (networkStats.cashback || user.cashbackPoints || 0) + (networkStats.commission || user.commissionPoints || 0);
   // Fallback mock history if no logs from backend yet
-  const pointHistory = user.pointLogs && user.pointLogs.length > 0 
-    ? user.pointLogs 
-    : [
-        { id: 'h1', date: new Date().toISOString(), amount: 1500, source: 'Bonus Aktivasi Afiliasi', type: 'IN' as const },
-        { id: 'h2', date: new Date().toISOString(), amount: 300, source: 'Komisi Referral: U972SX', type: 'IN' as const },
-        { id: 'h3', date: new Date().toISOString(), amount: 250, source: 'Cashback Kopi Susu', type: 'IN' as const },
-      ];
+ const pointHistory = transactions.map((trx: any) => ({
+  id: trx.id,
+  date: trx.created_at || trx.date,
+  amount: trx.commission_earned || trx.amount || trx.points || 0,
+  source: trx.transaction_code
+    ? `Komisi Referral: ${trx.transaction_code}`
+    : trx.source || 'Komisi Referral',
+  type: 'IN',
+}));
+  console.log('TRANSACTIONS AFFILIATE:', transactions);
+  console.log('POINT HISTORY AFFILIATE:', pointHistory);
 
   return (
   <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 space-y-8 animate-in fade-in duration-300">
@@ -241,10 +246,17 @@ useEffect(() => {
         </p>
       </div>
 
-      <div className="inline-flex w-fit items-center rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3 text-xs font-black text-orange-600">
-        <QrCode size={17} className="mr-2" />
-        QR Member tersedia di Profil Afiliasi
-      </div>
+      <button
+  onClick={() =>
+    window.dispatchEvent(
+      new CustomEvent('navigate-profile')
+    )
+  }
+  className="inline-flex items-center rounded-2xl border border-orange-100 bg-orange-50 px-5 py-4 text-orange-600 font-bold hover:bg-orange-100 transition"
+>
+  <QrCode size={17} className="mr-2" />
+  QR Member tersedia di Profil Afiliasi
+</button>
     </header>
 
     {/* Hero */}
@@ -450,16 +462,28 @@ useEffect(() => {
 
     {/* Point History */}
     <section>
-      <div className="mb-5 flex items-center gap-2">
-        <History size={22} className="text-orange-600" />
-        <h2 className="text-xl font-black text-slate-900">
-          Riwayat Poin Pemasukan
-        </h2>
-      </div>
+      <div className="mb-4 flex items-center justify-between">
+  <div className="flex items-center gap-2">
+    <History size={21} className="text-orange-600" />
+    <h2 className="text-lg font-black text-slate-900">
+      Riwayat Poin Pemasukan
+    </h2>
+  </div>
+
+ <button
+  onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-history'))}
+  className="hidden sm:inline-flex items-center gap-1 text-sm font-black text-orange-600 hover:underline"
+>
+  Lihat Semua →
+</button>
+</div>
 
       <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
         <div className="divide-y divide-slate-100">
-          {pointHistory.map((log) => (
+          {pointHistory
+          .filter((log) => log.type === 'IN')
+          .slice(0, 3)
+          .map((log) => (
             <div key={log.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition">
               <div className="flex items-center gap-4">
                 <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
@@ -489,8 +513,14 @@ useEffect(() => {
               </div>
             </div>
           ))}
+
+  {pointHistory.filter((log) => log.type === 'IN').length === 0 && (
+    <div className="py-6 text-center text-sm font-semibold text-slate-400">
+      Belum ada riwayat poin pemasukan.
+    </div>
+  )}
+</div>
         </div>
-      </div>
     </section>
 
     {/* Downline Transactions */}
@@ -521,6 +551,70 @@ useEffect(() => {
     </div>
   ))}
 </div>
+
+       <footer className="border-t border-slate-200 bg-transparent">
+  <div className="max-w-7xl mx-auto px-6 py-14">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-10 text-sm">
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">NgolabHub</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Membership</li>
+          <li>Affiliate Program</li>
+          <li>Reward Center</li>
+          <li>AI Insight</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Platform</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>QR Member</li>
+          <li>Dashboard Member</li>
+          <li>Dashboard Affiliate</li>
+          <li>Riwayat Transaksi</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Solusi</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Loyalty Digital</li>
+          <li>Referral Commission</li>
+          <li>Voucher & Promo</li>
+          <li>Gamification</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Ekosistem</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Ngolab Express</li>
+          <li>Bakso Mas Yanto</li>
+          <li>Kasir Kiosk</li>
+          <li>Gamification App</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Informasi</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Tentang Kami</li>
+          <li>Kontak</li>
+          <li>Bantuan</li>
+          <li>Keamanan Data</li>
+        </ul>
+      </div>
+    </div>
+
+    <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <p>© 2026 Ngolab Express. Member & Affiliate.</p>
+      <div className="flex items-center gap-6">
+        <span>Terms of Use</span>
+        <span>Privacy Policy</span>
+      </div>
+    </div>
+  </div>
+</footer>
     </section>
   </div>
   );

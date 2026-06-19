@@ -19,6 +19,7 @@ export enum AffiliateLevel {
 export interface User {
   id: string; // UserID
   name: string; // Nama_Lengkap
+  user_id?: string; 
   username?: string; // Username
   email: string; // Email
   password?: string; // Password
@@ -31,6 +32,7 @@ export interface User {
   phone_number?: string; // Nomor_Telepon - snake_case backend
   photoURL?: string; // Foto_Profil
   profile_picture?: string; // Foto_Profil - snake_case backend
+ 
   
   // AI Insight & Validation
   ktm_url?: string;

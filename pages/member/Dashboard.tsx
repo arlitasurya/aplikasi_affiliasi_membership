@@ -26,6 +26,7 @@ interface MemberDashboardProps {
 const MemberDashboard: React.FC<MemberDashboardProps> = ({ user }) => {
   const [aiAdvice, setAiAdvice] = useState<string>('Menganalisis pola belanja Anda...');
   const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -79,33 +80,9 @@ useEffect(() => {
   const displayName =
     user.name && typeof user.name === 'string' ? user.name.split(' ')[0] : 'User';
 
-  const pointHistory =
-    user.pointLogs && user.pointLogs.length > 0
-      ? user.pointLogs
-      : [
-          {
-            id: 'h1',
-            date: new Date().toISOString(),
-            amount: 1500,
-            source: 'Bonus Aktivasi Member',
-            type: 'IN' as const,
-          },
-          {
-            id: 'h2',
-            date: new Date().toISOString(),
-            amount: 500,
-            source: 'Main Game Level 1',
-            type: 'IN' as const,
-          },
-          {
-            id: 'h3',
-            date: new Date().toISOString(),
-            amount: 250,
-            source: 'Cashback Kopi Susu',
-            type: 'IN' as const,
-          },
-        ];
-
+ const pointHistory = user.pointLogs && user.pointLogs.length > 0
+  ? user.pointLogs
+  : [];
   const levelName = user.level || 'SILVER';
 
   return (
@@ -183,7 +160,14 @@ useEffect(() => {
 
                 <div className="relative z-10 rounded-[1.7rem] bg-white p-4 shadow-2xl">
                   {user?.id ? (
-                    <QRCode value={String(user.id)} size={135} />
+
+                   <button
+  type="button"
+  onClick={() => setShowQrModal(true)}
+  className="bg-white p-4 rounded-3xl shadow-xl hover:scale-105 transition"
+>
+  <QRCode value={String(user.id)} size={150} />
+</button>
                   ) : (
                     <div className="h-[135px] w-[135px] rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">
                       Memuat QR...
@@ -240,7 +224,7 @@ useEffect(() => {
                     </span>
                     <span className="flex items-center gap-1">
                       <CheckCircle2 size={14} className="text-emerald-500" />
-                      Promo eksklusif
+                      Rekomendasi Menu
                     </span>
                     <span className="flex items-center gap-1">
                       <CheckCircle2 size={14} className="text-emerald-500" />
@@ -297,9 +281,10 @@ useEffect(() => {
               </p>
             </div>
 
-            <div className="absolute right-8 bottom-6 hidden md:flex h-32 w-32 rounded-[2rem] bg-gradient-to-br from-orange-500 to-amber-400 items-center justify-center text-white shadow-xl shadow-orange-100 rotate-3">
-              <span className="text-4xl font-black">AI</span>
-            </div>
+            <Sparkles
+  className="absolute right-8 top-8 text-orange-200 opacity-50"
+  size={70}
+/>
 
             <Sparkles className="absolute right-4 top-4 h-24 w-24 text-orange-200/50" />
           </div>
@@ -313,17 +298,23 @@ useEffect(() => {
                 </h2>
               </div>
 
-              <button className="hidden sm:inline-flex items-center gap-1 text-sm font-black text-orange-600 hover:underline">
-                Lihat Semua <ArrowRight size={16} />
+              <button
+              onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-history'))}
+              className="hidden sm:inline-flex items-center gap-1 text-sm font-black text-orange-600 hover:underline"
+            >
+              Lihat Semua <ArrowRight size={16} />
               </button>
             </div>
 
             <div className="divide-y divide-slate-100">
-              {pointHistory.slice(0, 3).map((log) => (
+              {pointHistory
+              .filter((log) => log.type === 'IN')
+              .slice(0, 3)
+              .map((log) => (
                 <div
                   key={log.id}
                   className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50/60 rounded-2xl px-2 transition"
-                >
+    >
                   <div className="flex items-center gap-4">
                     <div
                       className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
@@ -438,12 +429,106 @@ useEffect(() => {
 </div>
         </section>
 
-        <footer className="border-t border-slate-100 py-7 text-center">
-          <p className="mt-2 text-xs text-slate-400">
-            © 2024 NgolabHub Ecosystem. Hak Cipta Dilindungi Undang-Undang.
-          </p>
-        </footer>
+       <footer className="border-t border-slate-200 bg-transparent">
+  <div className="max-w-7xl mx-auto px-6 py-14">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-10 text-sm">
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">NgolabHub</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Membership</li>
+          <li>Affiliate Program</li>
+          <li>Reward Center</li>
+          <li>AI Insight</li>
+        </ul>
       </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Platform</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>QR Member</li>
+          <li>Dashboard Member</li>
+          <li>Dashboard Affiliate</li>
+          <li>Riwayat Transaksi</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Solusi</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Loyalty Digital</li>
+          <li>Referral Commission</li>
+          <li>Voucher & Promo</li>
+          <li>Gamification</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Ekosistem</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Ngolab Express</li>
+          <li>Bakso Mas Yanto</li>
+          <li>Kasir Kiosk</li>
+          <li>Gamification App</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 className="font-black text-slate-900 mb-4">Informasi</h4>
+        <ul className="space-y-3 text-slate-500">
+          <li>Tentang Kami</li>
+          <li>Kontak</li>
+          <li>Bantuan</li>
+          <li>Keamanan Data</li>
+        </ul>
+      </div>
+    </div>
+
+    <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <p>© 2026 Ngolab Express. Member & Affiliate.</p>
+      <div className="flex items-center gap-6">
+        <span>Terms of Use</span>
+        <span>Privacy Policy</span>
+      </div>
+    </div>
+  </div>
+</footer>
+      </div>
+      {showQrModal && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    onClick={() => setShowQrModal(false)}
+  >
+    <div
+      className="bg-white rounded-[2rem] p-8 shadow-2xl max-w-md w-full text-center"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">
+        Member QR Code
+      </p>
+
+      <h2 className="mt-2 text-2xl font-black text-slate-900">
+        Scan di Kasir
+      </h2>
+
+      <div className="mt-6 flex justify-center">
+        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-lg">
+          <QRCode value={String(user.id)} size={280} />
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs font-black text-orange-600 break-all">
+        ID: {String(user.id)}
+      </p>
+
+      <button
+        onClick={() => setShowQrModal(false)}
+        className="mt-6 w-full py-3 rounded-2xl bg-orange-600 text-white font-black hover:bg-orange-700 transition"
+      >
+        Tutup
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

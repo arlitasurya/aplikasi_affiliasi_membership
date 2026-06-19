@@ -45,6 +45,7 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
   // Display name - prioritize username, fallback to name
   const displayName = user.username || user.name;
   const initials = displayName ? displayName.substring(0, 2).toUpperCase() : 'UN';
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const handleCopyCode = () => {
     if (user.referralCode) {
@@ -457,7 +458,19 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
           <div className="rounded-[2rem] border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-5 shadow-inner">
             <div className="rounded-2xl bg-white p-3 shadow-sm">
               {user?.id ? (
-                <QRCode value={String(user.id)} size={150} />
+                <button
+              type="button"
+              onClick={() => setShowQrModal(true)}
+              className="hover:scale-105 transition"
+            >
+              <button
+  type="button"
+  onClick={() => setShowQrModal(true)}
+  className="hover:scale-105 transition"
+>
+  <QRCode value={String(user.id)} size={170} />
+</button>
+            </button>
               ) : (
                 <div className="h-[150px] w-[150px] rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">
                   Memuat QR...
@@ -588,8 +601,39 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
         <SettingItem icon={HelpCircle} label="FAQ" onClick={() => setView('FAQ')} />
       </div>
     </section>
-  </div>
-);
+
+      {showQrModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowQrModal(false)}
+        >
+          <div
+            className="bg-white rounded-[2rem] p-8 shadow-2xl text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-black mb-6">
+              Scan di Kasir
+            </h2>
+
+            <div className="bg-white p-5 rounded-3xl shadow-lg">
+              <QRCode value={String(user.id)} size={280} />
+            </div>
+
+            <p className="mt-5 text-sm font-bold text-orange-600">
+              ID: {String(user.id)}
+            </p>
+
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="mt-6 px-6 py-3 bg-orange-600 text-white rounded-2xl font-bold"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default Profile;

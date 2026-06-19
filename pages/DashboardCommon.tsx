@@ -23,29 +23,36 @@ export const PlayGameCard: React.FC = () => (
   </div>
 );
 
-export const MenuRecommendationCard: React.FC<{ menu: any }> = ({ menu }) => (
-  <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all group">
-    <div className="h-40 overflow-hidden relative">
-      <img
-  src={menu.image_url || menu.image}
-  alt={menu.name}
-  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-/>
-      <div className="absolute top-2 right-2 bg-orange-600 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg">
-        Promo
+export const MenuRecommendationCard: React.FC<{ menu: any }> = ({ menu }) => {
+  const imageSrc = menu.image_url || menu.image;
+
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+      <div className="h-40 overflow-hidden relative bg-slate-100">
+        <img
+          src={imageSrc}
+          alt={menu.name}
+          onError={() => console.log('Gambar gagal dimuat:', imageSrc)}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+
+        <div className="absolute top-2 right-2 bg-orange-600 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg">
+          Promo
+        </div>
+
+        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-slate-800 border border-slate-100">
+          {(menu.cashback_reward || menu.price || 0).toLocaleString()} Poin
+        </div>
       </div>
-      <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-slate-800 border border-slate-100">
-        {menu.price.toLocaleString()} Poin
+
+      <div className="p-4">
+        <h4 className="font-bold text-slate-800 line-clamp-1">{menu.name}</h4>
+        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{menu.description}</p>
+
+        <button className="mt-4 flex items-center justify-center w-full py-2 bg-orange-50 text-orange-600 rounded-xl text-sm font-bold hover:bg-orange-600 hover:text-white transition-all">
+          Lihat Detail <Info size={14} className="ml-2" />
+        </button>
       </div>
     </div>
-    <div className="p-4">
-      <h4 className="font-bold text-slate-800 line-clamp-1">{menu.name}</h4>
-      <p className="text-xs text-slate-500 mt-1 line-clamp-2">{menu.description}</p>
-      <button 
-        className="mt-4 flex items-center justify-center w-full py-2 bg-orange-50 text-orange-600 rounded-xl text-sm font-bold hover:bg-orange-600 hover:text-white transition-all"
-      >
-        Lihat Detail <Info size={14} className="ml-2" />
-      </button>
-    </div>
-  </div>
-);
+  );
+};

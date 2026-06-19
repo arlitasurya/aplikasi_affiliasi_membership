@@ -90,6 +90,25 @@ useEffect(() => {
     }
   }, [user?.id]);
 
+
+  useEffect(() => {
+  const handleNavigateProfile = () => {
+   setActiveTab('profile');
+  };
+
+  window.addEventListener(
+    'navigate-profile',
+    handleNavigateProfile
+  );
+
+  return () => {
+    window.removeEventListener(
+      'navigate-profile',
+      handleNavigateProfile
+    );
+  };
+}, []);
+
   const handleSelectRole = (role: UserRole) => {
     setSelectedRole(role);
     setIsRegistering(true);
@@ -163,6 +182,19 @@ if (Array.isArray(result?.data)) {
 
   fetchTransactions();
 }, [user?.id, activeTab]);
+
+
+useEffect(() => {
+  const handleNavigateToHistory = () => {
+    setActiveTab('history');
+  };
+
+  window.addEventListener('navigate-to-history', handleNavigateToHistory);
+
+  return () => {
+    window.removeEventListener('navigate-to-history', handleNavigateToHistory);
+  };
+}, []);
 // Fetch commission logs from backend
 // Fetch commission logs from backend
 useEffect(() => {
@@ -329,16 +361,34 @@ useEffect(() => {
     }
   };
 
-  if (!user) {
-    if (isRegistering && selectedRole) {
-      return <Register role={selectedRole} onBack={() => setIsRegistering(false)} onSuccess={handleRegisterSuccess} />;
-    }
-    if (isLoggingIn) {
-      return <Login onBack={() => setIsLoggingIn(false)} onSuccess={handleLoginSuccess} />;
-    }
-    return <Landing onSelectRole={handleSelectRole} onLoginClick={() => setIsLoggingIn(true)} />;
+if (!user) {
+  if (isRegistering && selectedRole) {
+    return (
+      <Register
+        role={selectedRole}
+        onBack={() => setIsRegistering(false)}
+        onSuccess={handleRegisterSuccess}
+      />
+    );
   }
 
+  if (isLoggingIn) {
+    return (
+      <Login
+        onBack={() => setIsLoggingIn(false)}
+        onSuccess={handleLoginSuccess}
+      />
+    );
+  }
+
+  return (
+    <Landing
+      onSelectRole={handleSelectRole}
+      onLoginClick={() => setIsLoggingIn(true)}
+      onRegisterClick={() => handleSelectRole(UserRole.MEMBER)}
+    />
+  );
+}
   const renderContent = () => {
     // ROUTING UNTUK ADMIN
     if (user.role === UserRole.ADMIN) {
@@ -444,21 +494,6 @@ useEffect(() => {
           {renderContent()}
         </div>
         
-        {/* Footer Section */}
-        <footer className="mt-16 pt-8 border-t border-slate-100 text-center w-full max-w-7xl mx-auto pb-8">
-          <div className="flex items-center justify-center space-x-2 text-slate-400 font-bold text-lg mb-2">
-            <Star fill="currentColor" size={20} className="text-orange-600" />
-            <span>NgolabHub</span>
-          </div>
-          <p className="text-slate-400 text-sm font-medium">
-            © 2024 NgolabHub Ecosystem. Hak Cipta Dilindungi Undang-Undang.
-          </p>
-          <div className="flex items-center justify-center space-x-4 mt-2">
-            <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest">Privacy Policy</span>
-            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-            <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest">Terms of Service</span>
-          </div>
-        </footer>
       </main>
     </div>
   );

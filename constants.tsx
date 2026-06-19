@@ -1,13 +1,17 @@
 
 import { MenuItem, Voucher } from './types';
 
-/**
- * Backend Pusat API Configuration
- * Use environment variable `REACT_APP_API_BASE_URL` to point to backend pusat
- * Terhubung ke tabel users di database pusat
-  * Backend Pusat: http://192.168.77.211:4000
- */
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://192.168.77.211:4000';
+const CENTRAL_BACKEND_URL = 'http://10.134.87.238:4000';
+
+const getEnv = (key: string) =>
+  (import.meta as any).env?.[key] || (globalThis as any).process?.env?.[key];
+
+export const API_BASE_URL =
+  getEnv('REACT_APP_API_BASE_URL') ||
+  getEnv('VITE_API_BASE_URL') ||
+  getEnv('VITE_BACKEND_URL') ||
+  getEnv('VITE_CENTRAL_API_URL') ||
+  CENTRAL_BACKEND_URL;
 
 export const MOCK_MENU: MenuItem[] = [
   {
