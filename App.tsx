@@ -290,16 +290,29 @@ useEffect(() => {
           formData.append('profile_picture', file);
         }
       }
+const currentUserId = user?.id || user?.user_id;
 
-      const response = await fetch(`${API_BASE_URL}/api/membership/users/${updatedUser.id}`, {
-        method: 'PUT',
-        body: formData,
-        headers: { 'X-Connection-Key': CONNECTION_KEY },
-      });
+if (!currentUserId) {
+  alert('User belum ditemukan. Silakan login ulang.');
+  return;
+}
+
+const response = await fetch(`${API_BASE_URL}/api/membership/profile/${currentUserId}`, {
+  method: 'PUT',
+  body: formData,
+  headers: {
+    'X-Connection-Key': CONNECTION_KEY,
+  },
+});
       const result = await response.json();
       if (result.success) {
         const latest = result.data.user || result.data;
-        setUser({ ...latest, id: latest.user_id || latest.id, nim: updatedUser.nim } as any);
+       setUser({
+  ...latest,
+  id: latest.user_id || latest.id,
+  nim: updatedUser.nim,
+  photoURL: latest.photoURL || latest.profile_picture || latest.photo_url,
+} as any);
         alert('Profil berhasil diperbarui!');
       } else {
         alert('Gagal update: ' + (result.error || 'unknown'));

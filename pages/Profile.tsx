@@ -457,25 +457,19 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
         <div className="flex justify-center">
           <div className="rounded-[2rem] border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-5 shadow-inner">
             <div className="rounded-2xl bg-white p-3 shadow-sm">
-              {user?.id ? (
-                <button
-              type="button"
-              onClick={() => setShowQrModal(true)}
-              className="hover:scale-105 transition"
-            >
-              <button
-  type="button"
-  onClick={() => setShowQrModal(true)}
-  className="hover:scale-105 transition"
->
-  <QRCode value={String(user.id)} size={170} />
-</button>
-            </button>
-              ) : (
-                <div className="h-[150px] w-[150px] rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">
-                  Memuat QR...
-                </div>
-              )}
+             {user?.id ? (
+  <button
+    type="button"
+    onClick={() => setShowQrModal(true)}
+    className="hover:scale-105 transition"
+  >
+    <QRCode value={String(user.id)} size={170} />
+  </button>
+) : (
+  <div className="h-[150px] w-[150px] rounded-xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">
+    Memuat QR...
+  </div>
+)}
             </div>
           </div>
         </div>
