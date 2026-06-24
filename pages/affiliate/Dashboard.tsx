@@ -328,6 +328,11 @@ useEffect(() => {
                     {(networkStats.cashback || user.cashbackPoints || 0).toLocaleString()} PTS
                   </span>
                 </div>
+
+                <div className="flex justify-between">
+                <span>Poin Gemifikasi</span>
+                <span>{(user.totalPoints || 0).toLocaleString()} PTS</span>
+              </div>
               </div>
             </div>
           </div>
