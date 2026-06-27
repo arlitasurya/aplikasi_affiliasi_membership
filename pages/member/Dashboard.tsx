@@ -192,24 +192,11 @@ useEffect(() => {
               {levelName}
             </h2>
 
-            <div className="mt-7">
-              <div className="h-3 w-full rounded-full bg-slate-200 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${
-                    isGold
-                      ? 'bg-gradient-to-r from-amber-400 to-orange-500'
-                      : 'bg-gradient-to-r from-orange-500 to-amber-400'
-                  }`}
-                  style={{ width: isGold ? '100%' : '75%' }}
-                />
-              </div>
-
-              <div className="mt-3 flex justify-between text-xs font-bold text-slate-500">
-                <span>{isGold ? 'Level maksimal tercapai' : '750 poin menuju level GOLD'}</span>
-                <span>{isGold ? 'MAX' : '750 / 1000'}</span>
-              </div>
-            </div>
-
+            <div className="mt-5 rounded-2xl bg-slate-100 px-4 py-3">
+            <p className="text-sm text-slate-600">
+              Tingkatkan Level Member di aplikasi Gemifikasi 
+            </p>
+          </div>
             <div className="mt-7 rounded-3xl border border-orange-100 bg-orange-50/60 p-5">
               <div className="flex gap-3">
                 <div className="h-11 w-11 rounded-2xl bg-white flex items-center justify-center text-orange-600 shadow-sm">
@@ -256,15 +243,12 @@ useEffect(() => {
                 Kumpulkan Lebih Banyak Ngolab Poin!
               </h3>
               <p className="mt-1 text-sm text-slate-500 max-w-2xl">
-                Mainkan mini-game seru di ekosistem utama kami dan dapatkan tambahan poin
+                Mainkan mini-game di aplikasi gemifikasi seru dan dapatkan tambahan poin
                 untuk ditukar dengan makanan.
               </p>
             </div>
           </div>
 
-          <button className="rounded-2xl bg-orange-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-orange-100 hover:bg-orange-700 transition">
-            Main Sekarang 🎮
-          </button>
         </section>
 
         {/* AI + Point History */}

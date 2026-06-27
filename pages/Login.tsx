@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { UserRole, User } from '../types';
 import { ArrowLeft, Star, Mail, Lock, ArrowRight, Sparkles, QrCode, Gift } from 'lucide-react';
 import { API_BASE_URL } from '../constants';
+import { UserRole, User, MemberLevel } from '../types';
 
 interface LoginProps {
   onBack: () => void;
   onSuccess: (user: User) => void;
+  onRegisterClick?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
+
+const Login: React.FC<LoginProps> = ({
+  onBack,
+  onSuccess,
+  onRegisterClick,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,22 +42,49 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server responded with status: ${response.status}`);
+        throw new Error(errorData.message || `email atau password salah: ${response.status}`);
       }
 
       const result = await response.json();
 
       if (result.success && result.data && result.data.user) {
         const src = result.data.user;
-        const user: User = {
-          ...src,
-          id: src.user_id || src.id,
-          role: src.role || UserRole.MEMBER,
-          totalPoints: result.data.points?.total_points || src.total_points || 0,
-          cashbackPoints: result.data.points?.cashback_points || src.cashback_points || 0,
-          commissionPoints: result.data.points?.commission_points || src.commission_points || 0,
-          referralCode: result.data.affiliate_network?.referral_code || src.referral_code || '',
-        };
+       const user: User = {
+  ...src,
+  id: src.user_id || src.id,
+  role: src.role || UserRole.MEMBER,
+
+  // TAMBAHKAN INI
+ level: String(
+  result.data.points?.memberLevel ||
+  src.membership_level ||
+  src.level ||
+  'SILVER'
+).toUpperCase() as MemberLevel,
+
+  totalPoints:
+    result.data.points?.total_points ||
+    src.total_points ||
+    0,
+
+  cashbackPoints:
+    result.data.points?.cashback_points ||
+    src.cashback_points ||
+    0,
+
+  commissionPoints:
+    result.data.points?.commission_points ||
+    src.commission_points ||
+    0,
+
+  referralCode:
+    result.data.affiliate_network?.referral_code ||
+    src.referral_code ||
+    '',
+};
+console.log("USER SETELAH LOGIN:", user);
+
+onSuccess(user);
 
         const token = result.data.token || result.data.accessToken;
         if (token) {
@@ -101,15 +134,7 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
 
           <div className="max-w-2xl">
             <div className="mb-10 flex items-center gap-3">
-              <div className="h-14 w-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center shadow-xl shadow-orange-100">
-                <Star fill="currentColor" size={30} />
-              </div>
-              <div>
-                <h2 className="text-3xl font-black text-orange-600">NgolabHub</h2>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Membership & Affiliate
-                </p>
-              </div>
+            
             </div>
 
             <h1 className="text-6xl xl:text-7xl font-black leading-[0.95] tracking-tight text-slate-950">
@@ -242,12 +267,15 @@ const Login: React.FC<LoginProps> = ({ onBack, onSuccess }) => {
               </button>
             </form>
 
-            <p className="mt-8 text-center text-sm text-slate-400">
-              Belum memiliki akun?{' '}
-              <span className="font-black text-orange-600">
-                Daftar melalui halaman registrasi
-              </span>
-            </p>
+           <p className="mt-8 text-center text-sm text-slate-400">
+  Belum memiliki akun?{' '}
+  <span
+    onClick={onRegisterClick}
+    className="font-black text-orange-600 cursor-pointer hover:text-orange-700 transition"
+  >
+    Daftar melalui halaman registrasi
+  </span>
+</p>
           </div>
         </div>
       </section>

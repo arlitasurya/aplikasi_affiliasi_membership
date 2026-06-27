@@ -161,15 +161,7 @@ const Register: React.FC<RegisterProps> = ({ role, onBack, onSuccess }) => {
 
           <div className="max-w-2xl">
             <div className="mb-10 flex items-center gap-3">
-              <div className="h-14 w-14 rounded-2xl bg-orange-600 text-white flex items-center justify-center shadow-xl shadow-orange-100">
-                <Star fill="currentColor" size={30} />
-              </div>
-              <div>
-                <h2 className="text-3xl font-black text-orange-600">NgolabHub</h2>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Membership & Affiliate
-                </p>
-              </div>
+             
             </div>
 
             <h1 className="text-6xl xl:text-7xl font-black leading-[0.95] tracking-tight text-slate-950">

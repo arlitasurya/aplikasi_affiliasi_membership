@@ -24,6 +24,7 @@ export interface User {
   email: string; // Email
   password?: string; // Password
   role: UserRole; // Role
+ 
   status: 'ACTIVE' | 'PENDING' | 'BANNED' | 'REJECTED' | 'VERIFIED'; // Account_Status mappings
   referredBy?: string; // Referred_By (ID Upline Permanen) - camelCase
   referred_by?: string; // Referred_By (ID Upline Permanen) - snake_case backend

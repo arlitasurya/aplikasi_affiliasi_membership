@@ -170,8 +170,14 @@ useEffect(() => {
   const nextLevel = currentLevelIdx < levels.length - 1 ? levels[currentLevelIdx + 1] : null;
 
   // LOGIKA LEVEL MEMBER (GOLD/SILVER/PLATINUM)
-  const isGold = user.level === MemberLevel.GOLD;
-  const isPlatinum = user.level === MemberLevel.PLATINUM;
+ const memberLevel =
+  (user as any).memberLevel ||
+  (user as any).membership_level ||
+  user.level ||
+  MemberLevel.SILVER;
+
+const isGold = memberLevel === MemberLevel.GOLD;
+const isPlatinum = memberLevel === MemberLevel.PLATINUM;
   
   const levelConfig = isPlatinum 
     ? {
@@ -388,28 +394,26 @@ useEffect(() => {
       </div>
 
       <div className="rounded-3xl bg-slate-50 p-5">
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Level Member
-            </p>
-            <p className="mt-1 text-3xl font-black text-slate-800 uppercase">
-              {user.level || 'SILVER'}
-            </p>
-          </div>
-
-          <Crown size={44} fill="currentColor" className="text-slate-300" />
-        </div>
-
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full w-3/4 rounded-full bg-slate-500" />
-        </div>
-
-        <p className="mt-2 text-[10px] font-black uppercase text-slate-500">
-          75% menuju level Gold
-        </p>
-      </div>
+  <div className="mb-3 flex items-center justify-between">
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+        Level Member
+      </p>
+      <p className="mt-1 text-3xl font-black text-slate-800 uppercase">
+        {String(memberLevel).toUpperCase()}
+      </p>
     </div>
+
+    <Crown size={44} fill="currentColor" className="text-slate-300" />
+  </div>
+
+  <div className="rounded-2xl bg-slate-100 px-4 py-3">
+    <p className="text-sm font-semibold text-slate-500">
+     ingkatkan Level Member di aplikasi Gemifikasi
+    </p>
+  </div>
+</div>
+</div>
   </div>
 </div>
 </section>
@@ -423,13 +427,11 @@ useEffect(() => {
         <div>
           <h3 className="font-black text-slate-900">Kumpulkan Lebih Banyak Ngolab Poin!</h3>
           <p className="text-sm text-slate-500">
-            Mainkan mini-game dan dapatkan tambahan poin untuk ditukar dengan makanan.
+            Mainkan mini-game di aplikasi gemifikasi seru dan dapatkan tambahan poin
+            untuk ditukar dengan makanan.
           </p>
         </div>
       </div>
-      <button className="rounded-2xl bg-orange-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-orange-100">
-        Main Sekarang 🎮
-      </button>
     </section>
 
     {/* AI Insight */}

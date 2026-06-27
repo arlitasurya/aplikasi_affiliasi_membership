@@ -15,7 +15,7 @@ import UpgradeAffiliate from './pages/UpgradeAffiliate';
 import { VoucherCard } from './pages/RewardsCommon';
 import { TransactionList } from './pages/HistoryCommon';
 import { MOCK_VOUCHERS, API_BASE_URL, GAMIFICATION_LINK } from './constants';
-import { Clock, LogOut, Settings, Users, Star, Zap, ArrowRight, Sparkles } from 'lucide-react';
+import { Ticket, Clock, LogOut, Settings, Users, Star, Zap, ArrowRight, Sparkles, Gift } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -25,7 +25,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [commissionLogs, setCommissionLogs] = useState<any[]>([]);
-  const [vouchers, setVouchers] = useState<Voucher[]>(MOCK_VOUCHERS);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [isLoadingUpdate, setIsLoadingUpdate] = useState(false);
 
   useEffect(() => {
@@ -89,6 +89,43 @@ useEffect(() => {
       }
     }
   }, [user?.id]);
+
+
+useEffect(() => {
+  const fetchUserVouchers = async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/membership/users/${user.id}/vouchers`
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        const mappedVouchers: Voucher[] = result.data.map((item: any) => ({
+          id: item.voucher_code,
+          code: item.voucher_code,
+          title: item.voucher_name,
+          discount:
+            item.voucher_type === 'discount'
+              ? `${Number(item.value_amount || 0)}%`
+              : `${Number(item.value_amount || 0).toLocaleString('id-ID')} Poin`,
+          expiry: item.expired_at || item.claimed_at || '-',
+          minSpend: Number(item.min_purchase || 0),
+          isClaimed: true,
+        }));
+
+        setVouchers(mappedVouchers);
+      }
+    } catch (error) {
+      console.error('Gagal mengambil voucher user:', error);
+      setVouchers([]);
+    }
+  };
+
+  fetchUserVouchers();
+}, [user?.id]);
 
 
   useEffect(() => {
@@ -387,10 +424,14 @@ if (!user) {
 
   if (isLoggingIn) {
     return (
-      <Login
-        onBack={() => setIsLoggingIn(false)}
-        onSuccess={handleLoginSuccess}
-      />
+     <Login
+  onBack={() => setIsLoggingIn(false)}
+  onSuccess={handleLoginSuccess}
+  onRegisterClick={() => {
+    setIsLoggingIn(false);
+    handleSelectRole(UserRole.MEMBER);
+  }}
+/>
     );
   }
 
@@ -426,42 +467,43 @@ if (!user) {
           : <MemberDashboard user={user} transactions={transactions} />;
       case 'rewards':
         return (
-          <div className="space-y-8 max-w-5xl mx-auto animate-in fade-in duration-200">
-             <header><h1 className="text-2xl font-bold text-slate-900">Reward & Promo</h1></header>
-             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {vouchers.map(v => (
-                    <VoucherCard key={v.id} voucher={v} onClaim={() => handleClaimVoucher(v.id)} />
-                  ))}
-                </div>
+          <div className="space-y-8 animate-in fade-in duration-200">
+  <header className="mb-6">
+    <h1 className="text-2xl font-bold text-slate-900">
+      Reward & Promo
+    </h1>
+  </header>
 
-                <div className="space-y-6">
-                  <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden group">
-                    <div className="relative z-10">
-                      <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <Zap size={24} />
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-3">Mau Voucher Lebih Menarik?</h3>
-                      <p className="text-slate-500 text-sm leading-relaxed mb-6">
-                        Mainkan mini-game seru di aplikasi gamifikasi kami! Kumpulkan poin harian dan tukarkan dengan voucher diskon hingga 50% atau menu gratis.
-                      </p>
-                      <a 
-                        href={GAMIFICATION_LINK}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-2 bg-orange-600 text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-orange-100 hover:bg-orange-700 transition-all"
-                      >
-                        <span>Main & Dapatkan Poin</span>
-                        <ArrowRight size={16} />
-                      </a>
-                    </div>
-                    <div className="absolute -right-8 -bottom-8 text-slate-50 opacity-50 group-hover:text-orange-50 transition-colors">
-                      <Sparkles size={160} />
-                    </div>
-                  </div>
-                </div>
-             </section>
+  <section className="flex justify-center">
+    <div className="w-full max-w-xl">
+      {vouchers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+            <Gift size={48} className="text-orange-600" />
           </div>
+
+          <h3 className="text-lg font-bold text-slate-800 mb-2">
+            Belum Ada Voucher Tersedia
+          </h3>
+
+          <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
+            Saat ini belum ada voucher yang dapat ditukarkan. Voucher akan muncul ketika tersedia promo baru atau setelah Anda memiliki poin yang mencukupi dari gemifikasi.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {vouchers.map((v) => (
+            <VoucherCard
+              key={v.id}
+              voucher={v}
+              onClaim={() => handleClaimVoucher(v.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</div>
         );
       case 'history':
       case 'history_purchase':

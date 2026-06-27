@@ -35,6 +35,7 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
   const [view, setView] = useState<ProfileView>('MAIN');
   const [isCopied, setIsCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     name: user.username || user.name,
     phone: user.phone_number || user.phone || '',
@@ -195,8 +196,25 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
     </div>
   );
 
-  const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=f97316&color=fff&size=128`;
-  const editAvatarUrl = editForm.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(editForm.name)}&background=f97316&color=fff&size=128`;
+  const getProfileImageUrl = (value?: string | null) => {
+  if (!value) return '';
+
+  if (value.startsWith('http')) {
+    return value;
+  }
+
+  const cleanPath = value.startsWith('/') ? value : `/${value}`;
+  return `${API_BASE_URL}${cleanPath}`;
+};
+
+const avatarUrl =
+  getProfileImageUrl((user as any).profile_picture || (user as any).photo_url) ||
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=f97316&color=fff`;
+
+const editAvatarUrl =
+  previewUrl ||
+  getProfileImageUrl((user as any).profile_picture || (user as any).photo_url) ||
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(editForm.name || displayName)}&background=f97316&color=fff`;
 
   if (view === 'EDIT') {
     return (
@@ -493,7 +511,7 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
                 Membership Level
               </p>
               <h2 className="mt-2 text-3xl font-black text-slate-950">
-                {user.level || 'SILVER'} MEMBER
+                {user.level || 'SILVER'} 
               </h2>
             </div>
 
@@ -507,10 +525,7 @@ const Profile: React.FC<ProfileProps> = ({ user, transactions, onUpdateUser }) =
               <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-orange-500 to-amber-400" />
             </div>
 
-            <div className="mt-3 flex justify-between text-xs font-bold text-slate-500">
-              <span>750 poin menuju level GOLD</span>
-              <span>750 / 1000</span>
-            </div>
+            
           </div>
         </div>
 
