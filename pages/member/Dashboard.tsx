@@ -89,27 +89,17 @@ useEffect(() => {
     <div className="min-h-screen bg-slate-50 px-4 py-6 md:px-8 lg:px-10 animate-in fade-in duration-300">
       <div className="mx-auto max-w-7xl space-y-7">
         {/* Header */}
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight">
-              Halo, {displayName}! 👋
-            </h1>
-            <p className="mt-1 text-sm md:text-base text-slate-500">
-              Ayo kumpulkan poin belanja dan nikmati keuntungannya.
-            </p>
-          </div>
+       <header className="mb-8">
+  <div>
+    <h1 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight">
+      Halo, {displayName}! 👋
+    </h1>
 
-          <div className="hidden md:flex items-center gap-3">
-            <button className="relative h-11 w-11 rounded-2xl border border-slate-100 bg-white shadow-sm flex items-center justify-center text-slate-600 hover:bg-slate-50 transition">
-              <Bell size={20} />
-              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-orange-600" />
-            </button>
-
-            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 border border-orange-100 flex items-center justify-center text-xl shadow-sm">
-              👤
-            </div>
-          </div>
-        </header>
+    <p className="mt-1 text-sm md:text-base text-slate-500">
+      Ayo kumpulkan poin belanja dan nikmati keuntungannya.
+    </p>
+  </div>
+</header>
 
         {/* Top Section */}
         <section className="grid grid-cols-1 xl:grid-cols-5 gap-6">
