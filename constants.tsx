@@ -1,7 +1,7 @@
 
 import { MenuItem, Voucher } from './types';
 
-const CENTRAL_BACKEND_URL = 'http://10.20.113.142:4000';
+const CENTRAL_BACKEND_URL = 'http://localhost:4000';
 
 const getEnv = (key: string) =>
   (import.meta as any).env?.[key] || (globalThis as any).process?.env?.[key];
